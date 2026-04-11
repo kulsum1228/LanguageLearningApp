@@ -1,13 +1,14 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import * as Speech from "expo-speech";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import API from "../utils/api";
 
@@ -21,6 +22,14 @@ export default function LessonDetailScreen() {
   useEffect(() => {
     fetchLesson();
   }, [id]);
+
+  const speakWord = (word) => {
+    Speech.speak(word, {
+      language: "mr-IN",
+      pitch: 1.0,
+      rate: 0.8,
+    });
+  };
 
   const fetchLesson = async () => {
     try {
@@ -74,7 +83,15 @@ export default function LessonDetailScreen() {
 
         {vocabulary.map((word) => (
           <View key={word.id} style={styles.wordCard}>
-            <Text style={styles.marathiWord}>{word.marathi_word}</Text>
+            <View style={styles.wordHeader}>
+              <Text style={styles.marathiWord}>{word.marathi_word}</Text>
+              <TouchableOpacity
+                style={styles.speakButton}
+                onPress={() => speakWord(word.marathi_word)}
+              >
+                <Text style={styles.speakIcon}>🔊</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.romanized}>{word.romanized}</Text>
             <Text style={styles.englishMeaning}>{word.english_meaning}</Text>
             {word.example_sentence && (
@@ -143,11 +160,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#2D1B69",
   },
+  wordHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
   marathiWord: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 4,
+  },
+  speakButton: {
+    backgroundColor: "#2D1B69",
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#9D4EDD",
+  },
+  speakIcon: {
+    fontSize: 18,
   },
   romanized: {
     fontSize: 16,
