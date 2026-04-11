@@ -9,9 +9,9 @@ export default function Index() {
     const checkToken = async () => {
       const token = await getToken();
       if (token) {
-        router.replace("/tabs" as any);
+        router.replace("/(tabs)");
       } else {
-        router.replace("/login" as any);
+        router.replace("/(auth)/login");
       }
     };
     checkToken();
