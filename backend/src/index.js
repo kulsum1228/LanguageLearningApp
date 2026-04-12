@@ -10,9 +10,11 @@ app.use(express.json());
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const lessonRoutes = require("./routes/lessonRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/lessons", lessonRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Health check
 app.get("/", (req, res) => {

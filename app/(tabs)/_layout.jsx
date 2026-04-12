@@ -21,6 +21,10 @@ export default function TabsLayout() {
         name="lessons"
         options={{ title: "Lessons", tabBarLabel: "Lessons" }}
       />
+      <Tabs.Screen
+        name="conversation"
+        options={{ title: "Practice", tabBarLabel: "🗣️ Practice" }}
+      />
     </Tabs>
   );
 }
