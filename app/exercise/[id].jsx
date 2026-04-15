@@ -2,14 +2,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import API from "../utils/api";
+import { getUser } from "../utils/storage";
 
 export default function ExerciseScreen() {
   const router = useRouter();
@@ -22,6 +23,8 @@ export default function ExerciseScreen() {
   const [answered, setAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [user, setUser] = useState(null);
+  const [xpEarned, setXpEarned] = useState(0);
 
   useEffect(() => {
     fetchExercises();
@@ -31,6 +34,8 @@ export default function ExerciseScreen() {
     try {
       const response = await API.get(`/lessons/${id}/exercises`);
       setExercises(response.data);
+      const savedUser = await getUser();
+      setUser(savedUser);
     } catch (err) {
       console.error(err);
     } finally {
@@ -51,8 +56,19 @@ export default function ExerciseScreen() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex + 1 >= exercises.length) {
+      try {
+        const response = await API.post("/gamification/award-xp", {
+          user_id: user?.id,
+          lesson_id: id,
+          score: score,
+          total: exercises.length,
+        });
+        setXpEarned(response.data.xp_earned);
+      } catch (err) {
+        console.error(err);
+      }
       setFinished(true);
     } else {
       setCurrentIndex(currentIndex + 1);
@@ -118,6 +134,12 @@ export default function ExerciseScreen() {
           </Text>
           <Text style={styles.resultPercent}>{percentage}% correct</Text>
 
+          {xpEarned > 0 && (
+            <View style={styles.xpBanner}>
+              <Text style={styles.xpText}>+{xpEarned} XP earned! ⭐</Text>
+            </View>
+          )}
+
           <View style={styles.resultButtons}>
             <TouchableOpacity
               style={styles.retryButton}
@@ -127,6 +149,7 @@ export default function ExerciseScreen() {
                 setFinished(false);
                 setAnswered(false);
                 setSelectedAnswer(null);
+                setXpEarned(0);
               }}
             >
               <Text style={styles.retryText}>Try Again</Text>
@@ -366,9 +389,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3A1A1A",
     borderColor: "#F44336",
   },
-  disabledOption: {
-    opacity: 0.5,
-  },
+  disabledOption: { opacity: 0.5 },
   optionLetter: {
     color: "#9D4EDD",
     fontWeight: "bold",
@@ -454,7 +475,21 @@ const styles = StyleSheet.create({
     color: "#9D4EDD",
     marginBottom: 8,
   },
-  resultPercent: { fontSize: 18, color: "#888", marginBottom: 40 },
+  resultPercent: { fontSize: 18, color: "#888", marginBottom: 16 },
+  xpBanner: {
+    backgroundColor: "#2D1B69",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#9D4EDD",
+  },
+  xpText: {
+    color: "#9D4EDD",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
   resultButtons: { width: "100%", gap: 12 },
   retryButton: {
     backgroundColor: "#1A1A2E",

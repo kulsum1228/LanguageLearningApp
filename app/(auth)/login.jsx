@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import API from "../utils/api";
-import { saveToken } from "../utils/storage";
+import { saveToken, saveUser } from "../utils/storage";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -28,7 +28,7 @@ export default function LoginScreen() {
     try {
       const response = await API.post("/auth/login", { email, password });
       await saveToken(response.data.token);
-      Alert.alert("Success", "Welcome back!");
+      await saveUser(response.data.user);
       router.replace("/(tabs)");
     } catch (error) {
       Alert.alert("Error", error.response?.data?.message || "Login failed");

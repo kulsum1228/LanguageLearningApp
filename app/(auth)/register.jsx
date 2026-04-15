@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import API from "../utils/api";
-import { saveToken } from "../utils/storage";
+import { saveToken, saveUser } from "../utils/storage";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function RegisterScreen() {
         password,
       });
       await saveToken(response.data.token);
-      Alert.alert("Success", "Account created!");
+      await saveUser(response.data.user);
       router.replace("/(tabs)");
     } catch (error) {
       Alert.alert(

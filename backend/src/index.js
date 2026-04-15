@@ -11,10 +11,12 @@ app.use(express.json());
 const authRoutes = require("./routes/authRoutes");
 const lessonRoutes = require("./routes/lessonRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const gamificationRoutes = require("./routes/gamificationRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/gamification", gamificationRoutes);
 
 // Health check
 app.get("/", (req, res) => {
