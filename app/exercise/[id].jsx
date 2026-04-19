@@ -25,6 +25,7 @@ export default function ExerciseScreen() {
   const [finished, setFinished] = useState(false);
   const [user, setUser] = useState(null);
   const [xpEarned, setXpEarned] = useState(0);
+  const [hints, setHints] = useState([]);
 
   useEffect(() => {
     fetchExercises();
@@ -41,6 +42,27 @@ export default function ExerciseScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Generate hints dynamically whenever current exercise changes
+  useEffect(() => {
+    if (exercises.length > 0 && exercises[currentIndex]?.type === "FILL") {
+      setHints(
+        generateHints(exercises[currentIndex].correct_answer, exercises),
+      );
+    }
+  }, [currentIndex, exercises]);
+
+  const generateHints = (correctAnswer, allExercises) => {
+    // Get wrong options from other exercises
+    const otherAnswers = allExercises
+      .filter((ex) => ex.correct_answer !== correctAnswer)
+      .map((ex) => ex.correct_answer)
+      .slice(0, 3);
+
+    // Combine correct answer with wrong ones and shuffle
+    const hints = [correctAnswer, ...otherAnswers];
+    return hints.sort(() => Math.random() - 0.5);
   };
 
   const currentExercise = exercises[currentIndex];
@@ -237,20 +259,18 @@ export default function ExerciseScreen() {
             {!answered ? (
               <>
                 <View style={styles.fillOptions}>
-                  {["नाव", "तीन", "निळे", "शाळेत", "पाणी"].map(
-                    (hint, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={[
-                          styles.hintButton,
-                          fillAnswer === hint && styles.selectedHint,
-                        ]}
-                        onPress={() => setFillAnswer(hint)}
-                      >
-                        <Text style={styles.hintText}>{hint}</Text>
-                      </TouchableOpacity>
-                    ),
-                  )}
+                  {hints.map((hint, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.hintButton,
+                        fillAnswer === hint && styles.selectedHint,
+                      ]}
+                      onPress={() => setFillAnswer(hint)}
+                    >
+                      <Text style={styles.hintText}>{hint}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
                 <TouchableOpacity
                   style={[

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
@@ -15,15 +16,33 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: "Home", tabBarLabel: "Home" }}
+        options={{
+          title: "Home",
+          tabBarLabel: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" color={color} size={size} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="lessons"
-        options={{ title: "Lessons", tabBarLabel: "Lessons" }}
+        options={{
+          title: "Lessons",
+          tabBarLabel: "Lessons",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book" color={color} size={size} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="conversation"
-        options={{ title: "Practice", tabBarLabel: "🗣️ Practice" }}
+        options={{
+          title: "Practice",
+          tabBarLabel: "Practice",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles" color={color} size={size} />
+          ),
+        }}
       />
     </Tabs>
   );

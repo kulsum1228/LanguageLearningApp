@@ -35,16 +35,51 @@ const getUserStats = async (req, res) => {
 };
 
 // Award XP after exercise completion
+// const awardXP = async (req, res) => {
+//   const { user_id, lesson_id, score, total } = req.body;
+//   try {
+//     // Calculate XP based on score
+//     const xpEarned = Math.round((score / total) * 100);
+
+//     // Update user XP
+//     const updatedUser = await pool.query(
+//       "UPDATE users SET xp_points = xp_points + $1 WHERE id = $2 RETURNING xp_points",
+//       [xpEarned, user_id],
+//     );
+
+//     // Update streak
+//     await updateStreak(user_id);
+
+//     // Check and award badges
+//     const newBadges = await checkBadges(user_id, updatedUser.rows[0].xp_points);
+
+//     res.status(200).json({
+//       xp_earned: xpEarned,
+//       total_xp: updatedUser.rows[0].xp_points,
+//       new_badges: newBadges,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 const awardXP = async (req, res) => {
   const { user_id, lesson_id, score, total } = req.body;
   try {
-    // Calculate XP based on score
     const xpEarned = Math.round((score / total) * 100);
 
     // Update user XP
     const updatedUser = await pool.query(
       "UPDATE users SET xp_points = xp_points + $1 WHERE id = $2 RETURNING xp_points",
       [xpEarned, user_id],
+    );
+
+    // Save lesson progress
+    await pool.query(
+      `INSERT INTO progress (user_id, lesson_id, completed, score, completed_at)
+       VALUES ($1, $2, true, $3, NOW())
+       ON CONFLICT (user_id, lesson_id)
+       DO UPDATE SET score = $3, completed = true, completed_at = NOW()`,
+      [user_id, lesson_id, Math.round((score / total) * 100)],
     );
 
     // Update streak
@@ -59,6 +94,7 @@ const awardXP = async (req, res) => {
       new_badges: newBadges,
     });
   } catch (err) {
+    console.error("Gamification error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
