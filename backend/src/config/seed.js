@@ -5,6 +5,20 @@ const seedData = async () => {
     console.log("Clearing old data...");
     await pool.query("DELETE FROM exercises");
     await pool.query("DELETE FROM vocabulary");
+    await pool.query("DELETE FROM lessons");
+
+    console.log("Seeding lessons...");
+    await pool.query(`
+      INSERT INTO lessons (title, description, level, order_number) VALUES
+      ('Greetings & Introductions', 'Learn how to greet people and introduce yourself', 'Beginner', 1),
+      ('Numbers & Counting', 'Learn numbers 1-20', 'Beginner', 2),
+      ('Colors', 'Learn basic colors', 'Beginner', 3),
+      ('Daily Routine', 'Learn words for daily activities', 'Beginner', 4),
+      ('Food & Drinks', 'Learn common food and drink vocabulary', 'Beginner', 5),
+      ('Family Members', 'Learn words for family relationships', 'Beginner', 6),
+      ('Body Parts', 'Learn names of body parts', 'Beginner', 7),
+      ('Animals', 'Learn names of common animals', 'Beginner', 8)
+    `);
 
     console.log("Seeding vocabulary...");
 
@@ -75,6 +89,45 @@ const seedData = async () => {
       (5, 'गोड', 'God', 'Sweet', 'हे मिठाई खूप गोड आहे')
     `);
 
+    // Lesson 6 — Family Members
+    await pool.query(`
+      INSERT INTO vocabulary (lesson_id, marathi_word, romanized, english_meaning, example_sentence) VALUES
+      (6, 'आई', 'Aai', 'Mother', 'माझी आई खूप चांगली आहे'),
+      (6, 'बाबा', 'Baba', 'Father', 'माझे बाबा डॉक्टर आहेत'),
+      (6, 'भाऊ', 'Bhau', 'Brother', 'माझा भाऊ शाळेत जातो'),
+      (6, 'बहीण', 'Baheen', 'Sister', 'माझी बहीण खूप हुशार आहे'),
+      (6, 'आजी', 'Aaji', 'Grandmother', 'आजी घरी असते'),
+      (6, 'आजोबा', 'Aajoba', 'Grandfather', 'आजोबा पेपर वाचतात'),
+      (6, 'मुलगा', 'Mulga', 'Son/Boy', 'तो एक चांगला मुलगा आहे'),
+      (6, 'मुलगी', 'Mulgi', 'Daughter/Girl', 'ती एक हुशार मुलगी आहे')
+    `);
+
+    // Lesson 7 — Body Parts
+    await pool.query(`
+      INSERT INTO vocabulary (lesson_id, marathi_word, romanized, english_meaning, example_sentence) VALUES
+      (7, 'डोके', 'Doke', 'Head', 'माझे डोके दुखत आहे'),
+      (7, 'डोळे', 'Dole', 'Eyes', 'त्याचे डोळे निळे आहेत'),
+      (7, 'कान', 'Kaan', 'Ears', 'माझे कान दुखत आहेत'),
+      (7, 'नाक', 'Naak', 'Nose', 'नाक बंद आहे'),
+      (7, 'तोंड', 'Tond', 'Mouth', 'तोंड उघडा'),
+      (7, 'हात', 'Haat', 'Hand', 'हात धुवा'),
+      (7, 'पाय', 'Paay', 'Leg/Foot', 'पाय दुखत आहे'),
+      (7, 'पोट', 'Pot', 'Stomach', 'पोट दुखत आहे')
+    `);
+
+    // Lesson 8 — Animals
+    await pool.query(`
+      INSERT INTO vocabulary (lesson_id, marathi_word, romanized, english_meaning, example_sentence) VALUES
+      (8, 'कुत्रा', 'Kutra', 'Dog', 'कुत्रा भुंकतो'),
+      (8, 'मांजर', 'Maanjar', 'Cat', 'मांजर झोपते'),
+      (8, 'गाय', 'Gaay', 'Cow', 'गाय दूध देते'),
+      (8, 'घोडा', 'Ghoda', 'Horse', 'घोडा धावतो'),
+      (8, 'हत्ती', 'Hatti', 'Elephant', 'हत्ती मोठा आहे'),
+      (8, 'वाघ', 'Vaagh', 'Tiger', 'वाघ जंगलात राहतो'),
+      (8, 'माकड', 'Maakad', 'Monkey', 'माकड झाडावर आहे'),
+      (8, 'पक्षी', 'Pakshi', 'Bird', 'पक्षी उडतो')
+    `);
+
     console.log("Seeding exercises...");
 
     // Lesson 1 exercises
@@ -142,6 +195,45 @@ const seedData = async () => {
       '["Sour", "Spicy", "Bitter", "Sweet"]', 'Sweet'),
       (5, 'FILL', 'मला _____ द्या (Please give me water)',
       NULL, 'पाणी')
+    `);
+
+    // Lesson 6 exercises
+    await pool.query(`
+      INSERT INTO exercises (lesson_id, type, question, options, correct_answer) VALUES
+      (6, 'MCQ', 'What does "आई" mean?',
+      '["Father", "Sister", "Mother", "Brother"]', 'Mother'),
+      (6, 'MCQ', 'How do you say "Brother" in Marathi?',
+      '["बहीण", "आई", "बाबा", "भाऊ"]', 'भाऊ'),
+      (6, 'MCQ', 'What does "आजी" mean?',
+      '["Grandfather", "Mother", "Grandmother", "Sister"]', 'Grandmother'),
+      (6, 'FILL', 'माझे _____ डॉक्टर आहेत (My father is a doctor)',
+      NULL, 'बाबा')
+    `);
+
+    // Lesson 7 exercises
+    await pool.query(`
+      INSERT INTO exercises (lesson_id, type, question, options, correct_answer) VALUES
+      (7, 'MCQ', 'What does "डोके" mean?',
+      '["Hand", "Leg", "Head", "Eye"]', 'Head'),
+      (7, 'MCQ', 'How do you say "Hand" in Marathi?',
+      '["पाय", "डोळे", "हात", "नाक"]', 'हात'),
+      (7, 'MCQ', 'What does "पोट" mean?',
+      '["Head", "Stomach", "Nose", "Ear"]', 'Stomach'),
+      (7, 'FILL', 'माझे _____ दुखत आहे (My head hurts)',
+      NULL, 'डोके')
+    `);
+
+    // Lesson 8 exercises
+    await pool.query(`
+      INSERT INTO exercises (lesson_id, type, question, options, correct_answer) VALUES
+      (8, 'MCQ', 'What does "कुत्रा" mean?',
+      '["Cat", "Dog", "Cow", "Horse"]', 'Dog'),
+      (8, 'MCQ', 'How do you say "Elephant" in Marathi?',
+      '["वाघ", "घोडा", "हत्ती", "माकड"]', 'हत्ती'),
+      (8, 'MCQ', 'What does "गाय" mean?',
+      '["Tiger", "Bird", "Monkey", "Cow"]', 'Cow'),
+      (8, 'FILL', '_____ दूध देते (Cow gives milk)',
+      NULL, 'गाय')
     `);
 
     console.log("✅ All data seeded successfully!");

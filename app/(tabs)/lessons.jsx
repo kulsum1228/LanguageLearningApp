@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -10,6 +11,17 @@ import {
   View,
 } from "react-native";
 import API from "../utils/api";
+
+const lessonIcons = [
+  "hand-left-outline",
+  "calculator-outline",
+  "color-palette-outline",
+  "sunny-outline",
+  "restaurant-outline",
+  "people-outline",
+  "body-outline",
+  "paw-outline",
+];
 
 export default function LessonsScreen() {
   const router = useRouter();
@@ -57,7 +69,11 @@ export default function LessonsScreen() {
       colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
       style={styles.gradient}
     >
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>All Lessons</Text>
           <Text style={styles.subtitle}>
@@ -65,14 +81,18 @@ export default function LessonsScreen() {
           </Text>
         </View>
 
-        {lessons.map((lesson) => (
+        {lessons.map((lesson, index) => (
           <TouchableOpacity
             key={lesson.id}
             style={styles.lessonCard}
             onPress={() => router.push(`/lesson/${lesson.id}`)}
           >
-            <View style={styles.numberCircle}>
-              <Text style={styles.numberText}>{lesson.order_number}</Text>
+            <View style={styles.iconBox}>
+              <Ionicons
+                name={lessonIcons[index % lessonIcons.length]}
+                size={24}
+                color="#9D4EDD"
+              />
             </View>
             <View style={styles.lessonInfo}>
               <Text
@@ -84,11 +104,11 @@ export default function LessonsScreen() {
                 {lesson.level}
               </Text>
               <Text style={styles.lessonTitle}>{lesson.title}</Text>
-              <Text style={styles.lessonDesc} numberOfLines={2}>
+              <Text style={styles.lessonDesc} numberOfLines={1}>
                 {lesson.description}
               </Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Ionicons name="chevron-forward" size={20} color="#9D4EDD" />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -98,7 +118,8 @@ export default function LessonsScreen() {
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
-  container: { flex: 1, padding: 24 },
+  scrollView: { flex: 1 },
+  container: { padding: 24, paddingBottom: 100 },
   header: { marginTop: 60, marginBottom: 24 },
   title: {
     fontSize: 28,
@@ -119,22 +140,15 @@ const styles = StyleSheet.create({
     borderColor: "#2D1B69",
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
   },
-  numberCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: "#2D1B69",
-    borderWidth: 1,
-    borderColor: "#9D4EDD",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
-  },
-  numberText: {
-    color: "#9D4EDD",
-    fontWeight: "bold",
-    fontSize: 16,
   },
   lessonInfo: { flex: 1 },
   levelBadge: {
@@ -148,15 +162,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   lessonDesc: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#888",
-  },
-  arrow: {
-    fontSize: 20,
-    color: "#9D4EDD",
-    marginLeft: 12,
   },
 });

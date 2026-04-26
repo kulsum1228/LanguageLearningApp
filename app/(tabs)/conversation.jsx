@@ -1,19 +1,31 @@
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import API from "../utils/api";
 
 export default function ConversationScreen() {
+  const scenarioIconMap = {
+    rickshaw: "car-outline",
+    market: "basket-outline",
+    restaurant: "restaurant-outline",
+    neighbour: "people-outline",
+    doctor: "medical-outline",
+    directions: "navigate-outline",
+    shopkeeper: "shirt-outline",
+    train: "train-outline",
+  };
+
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -98,7 +110,10 @@ export default function ConversationScreen() {
         colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
         style={styles.gradient}
       >
-        <ScrollView style={styles.container}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.container}
+        >
           <View style={styles.header}>
             <Text style={styles.title}>Conversation Practice</Text>
             <Text style={styles.subtitle}>
@@ -115,14 +130,20 @@ export default function ConversationScreen() {
                 style={styles.scenarioCard}
                 onPress={() => selectScenario(scenario)}
               >
-                <Text style={styles.scenarioEmoji}>{scenario.emoji}</Text>
+                <View style={styles.scenarioIconBox}>
+                  <Ionicons
+                    name={scenarioIconMap[scenario.id] || "chatbubble-outline"}
+                    size={28}
+                    color="#9D4EDD"
+                  />
+                </View>
                 <View style={styles.scenarioInfo}>
                   <Text style={styles.scenarioName}>{scenario.name}</Text>
                   <Text style={styles.scenarioHint}>
                     Tap to start practicing
                   </Text>
                 </View>
-                <Text style={styles.arrow}>→</Text>
+                <Ionicons name="chevron-forward" size={20} color="#9D4EDD" />
               </TouchableOpacity>
             ))
           )}
@@ -147,9 +168,17 @@ export default function ConversationScreen() {
             onPress={() => setSelectedScenario(null)}
             style={styles.backButton}
           >
-            <Text style={styles.backText}>←</Text>
+            <Ionicons name="arrow-back" size={24} color="#9D4EDD" />
           </TouchableOpacity>
-          <Text style={styles.scenarioEmoji}>{selectedScenario.emoji}</Text>
+          <View style={styles.chatIconBox}>
+            <Ionicons
+              name={
+                scenarioIconMap[selectedScenario.id] || "chatbubble-outline"
+              }
+              size={22}
+              color="#9D4EDD"
+            />
+          </View>
           <Text style={styles.chatTitle}>{selectedScenario.name}</Text>
         </View>
 
@@ -168,9 +197,7 @@ export default function ConversationScreen() {
               ]}
             >
               {msg.role === "assistant" && (
-                <Text style={styles.aiLabel}>
-                  {selectedScenario.emoji} {selectedScenario.name}
-                </Text>
+                <Text style={styles.aiLabel}>{selectedScenario.name}</Text>
               )}
               <Text
                 style={[
@@ -211,7 +238,7 @@ export default function ConversationScreen() {
               colors={["#7B2FBE", "#9D4EDD"]}
               style={styles.sendGradient}
             >
-              <Text style={styles.sendText}>→</Text>
+              <Ionicons name="send" size={20} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -223,7 +250,8 @@ export default function ConversationScreen() {
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   flex: { flex: 1 },
-  container: { flex: 1, padding: 24 },
+  scrollView: { flex: 1 },
+  container: { padding: 24, paddingBottom: 100 },
   header: { marginTop: 60, marginBottom: 32 },
   title: {
     fontSize: 28,
@@ -244,8 +272,16 @@ const styles = StyleSheet.create({
     borderColor: "#2D1B69",
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
   },
-  scenarioEmoji: { fontSize: 32, marginRight: 16 },
+  scenarioIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "#2D1B69",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   scenarioInfo: { flex: 1 },
   scenarioName: {
     fontSize: 18,
@@ -254,7 +290,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   scenarioHint: { fontSize: 13, color: "#888" },
-  arrow: { fontSize: 20, color: "#9D4EDD" },
   chatHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -266,11 +301,19 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backButton: { marginRight: 4 },
-  backText: { color: "#9D4EDD", fontSize: 24 },
+  chatIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#2D1B69",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   chatTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#FFFFFF",
+    flex: 1,
   },
   messagesContainer: {
     flex: 1,
@@ -333,10 +376,5 @@ const styles = StyleSheet.create({
     height: 48,
     justifyContent: "center",
     alignItems: "center",
-  },
-  sendText: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
   },
 });

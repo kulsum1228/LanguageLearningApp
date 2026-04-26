@@ -34,7 +34,7 @@ export default function RegisterScreen() {
       });
       await saveToken(response.data.token);
       await saveUser(response.data.user);
-      router.replace("/(tabs)");
+      router.replace("/language-select");
     } catch (error) {
       Alert.alert(
         "Error",

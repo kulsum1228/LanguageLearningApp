@@ -29,7 +29,7 @@ export default function LoginScreen() {
       const response = await API.post("/auth/login", { email, password });
       await saveToken(response.data.token);
       await saveUser(response.data.user);
-      router.replace("/(tabs)");
+      router.replace("/language-select");
     } catch (error) {
       Alert.alert("Error", error.response?.data?.message || "Login failed");
     } finally {

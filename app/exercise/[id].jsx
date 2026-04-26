@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -141,9 +142,24 @@ export default function ExerciseScreen() {
         style={styles.gradient}
       >
         <View style={styles.resultContainer}>
-          <Text style={styles.resultEmoji}>
-            {percentage >= 80 ? "🏆" : percentage >= 50 ? "👍" : "💪"}
-          </Text>
+          <Ionicons
+            name={
+              percentage >= 80
+                ? "trophy"
+                : percentage >= 50
+                  ? "thumbs-up"
+                  : "barbell-outline"
+            }
+            size={80}
+            color={
+              percentage >= 80
+                ? "#FFD700"
+                : percentage >= 50
+                  ? "#4CAF50"
+                  : "#9D4EDD"
+            }
+            style={{ marginBottom: 16 }}
+          />
           <Text style={styles.resultTitle}>
             {percentage >= 80
               ? "Excellent!"

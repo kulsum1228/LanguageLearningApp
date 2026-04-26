@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -10,9 +11,7 @@ import {
   View,
 } from "react-native";
 import API from "../utils/api";
-// import { getUser } from "../utils/storage";
-
-import { getUser, removeToken, removeUser } from "../utils/storage";
+import { getUser } from "../utils/storage";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -35,12 +34,10 @@ export default function HomeScreen() {
     try {
       const savedUser = await getUser();
       setUser(savedUser);
-
       const [lessonsRes, statsRes] = await Promise.all([
         API.get("/lessons"),
         API.get(`/gamification/stats/${savedUser?.id}`),
       ]);
-
       setLessons(lessonsRes.data.slice(0, 3));
       setStats(statsRes.data);
     } catch (err) {
@@ -55,11 +52,15 @@ export default function HomeScreen() {
       colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
       style={styles.gradient}
     >
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.greeting}>
-            नमस्कार{user?.name ? `, ${user.name.split(" ")[0]}` : ""}! 👋
+            Hello{user?.name ? `, ${user.name.split(" ")[0]}` : ""}!
           </Text>
           <Text style={styles.subGreeting}>Ready to learn today?</Text>
         </View>
@@ -67,22 +68,25 @@ export default function HomeScreen() {
         {/* Stats Row */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
+            <Ionicons name="flame" size={24} color="#FF6B35" />
             <Text style={styles.statNumber}>{stats.streak_days}</Text>
-            <Text style={styles.statLabel}>Day Streak 🔥</Text>
+            <Text style={styles.statLabel}>Day Streak</Text>
           </View>
           <View style={styles.statCard}>
+            <Ionicons name="star" size={24} color="#FFD700" />
             <Text style={styles.statNumber}>{stats.xp_points}</Text>
-            <Text style={styles.statLabel}>XP Points ⭐</Text>
+            <Text style={styles.statLabel}>XP Points</Text>
           </View>
           <View style={styles.statCard}>
+            <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
             <Text style={styles.statNumber}>{stats.lessons_done}</Text>
-            <Text style={styles.statLabel}>Lessons Done ✅</Text>
+            <Text style={styles.statLabel}>Lessons Done</Text>
           </View>
         </View>
 
         {/* Badges */}
         {stats.badges?.length > 0 && (
-          <View style={styles.badgesSection}>
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>Your Badges</Text>
             <View style={styles.badgesRow}>
               {stats.badges.map((badge, index) => (
@@ -107,6 +111,9 @@ export default function HomeScreen() {
                 style={styles.lessonCard}
                 onPress={() => router.push(`/lesson/${lesson.id}`)}
               >
+                <View style={styles.lessonIconBox}>
+                  <Ionicons name="book-outline" size={22} color="#9D4EDD" />
+                </View>
                 <View style={styles.lessonInfo}>
                   <Text style={styles.lessonLevel}>{lesson.level}</Text>
                   <Text style={styles.lessonTitle}>{lesson.title}</Text>
@@ -114,7 +121,7 @@ export default function HomeScreen() {
                     {lesson.description}
                   </Text>
                 </View>
-                <Text style={styles.arrow}>→</Text>
+                <Ionicons name="chevron-forward" size={20} color="#9D4EDD" />
               </TouchableOpacity>
             ))
           )}
@@ -125,18 +132,8 @@ export default function HomeScreen() {
           style={styles.viewAllButton}
           onPress={() => router.push("/(tabs)/lessons")}
         >
-          <Text style={styles.viewAllText}>View All Lessons →</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={async () => {
-            await removeToken();
-            await removeUser();
-            router.replace("/(auth)/login");
-          }}
-        >
-          <Text style={styles.logoutText}>Logout (Temp)</Text>
+          <Text style={styles.viewAllText}>View All Lessons</Text>
+          <Ionicons name="arrow-forward" size={18} color="#9D4EDD" />
         </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
@@ -145,7 +142,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
-  container: { flex: 1, padding: 24 },
+  scrollView: { flex: 1 },
+  container: { padding: 24, paddingBottom: 100 },
   header: { marginTop: 60, marginBottom: 24 },
   greeting: {
     fontSize: 28,
@@ -171,19 +169,25 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     borderWidth: 1,
     borderColor: "#2D1B69",
+    gap: 4,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#9D4EDD",
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: "#888",
-    marginTop: 4,
     textAlign: "center",
   },
-  badgesSection: { marginBottom: 24 },
+  section: { marginBottom: 24 },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 16,
+  },
   badgesRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -200,13 +204,6 @@ const styles = StyleSheet.create({
   },
   badgeEmoji: { fontSize: 24, marginBottom: 4 },
   badgeName: { fontSize: 10, color: "#9D4EDD", textAlign: "center" },
-  section: { marginBottom: 24 },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 16,
-  },
   lessonCard: {
     backgroundColor: "#1A1A2E",
     borderRadius: 16,
@@ -216,7 +213,15 @@ const styles = StyleSheet.create({
     borderColor: "#2D1B69",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 12,
+  },
+  lessonIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#2D1B69",
+    justifyContent: "center",
+    alignItems: "center",
   },
   lessonInfo: { flex: 1 },
   lessonLevel: {
@@ -231,16 +236,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   lessonDesc: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#888",
-  },
-  arrow: {
-    fontSize: 20,
-    color: "#9D4EDD",
-    marginLeft: 12,
   },
   viewAllButton: {
     backgroundColor: "#1A1A2E",
@@ -249,26 +249,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#9D4EDD",
-    marginBottom: 40,
+    marginBottom: 16,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
   },
   viewAllText: {
     color: "#9D4EDD",
     fontSize: 16,
-    fontWeight: "bold",
-  },
-
-  logoutButton: {
-    backgroundColor: "#3A1A1A",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#F44336",
-    marginBottom: 16,
-  },
-  logoutText: {
-    color: "#F44336",
-    fontSize: 14,
     fontWeight: "bold",
   },
 });
