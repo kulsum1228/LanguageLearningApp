@@ -40,7 +40,7 @@ export default function TabsLayout() {
           title: "Practice",
           tabBarLabel: "Practice",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles" color={color} size={size} />
+            <Ionicons name="mic" color={color} size={size} />
           ),
         }}
       />
@@ -52,6 +52,12 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" color={color} size={size} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="speaking"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
