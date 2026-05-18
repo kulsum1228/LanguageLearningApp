@@ -3,12 +3,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { theme } from "./utils/theme";
 
 const LANGUAGES = [
   {
@@ -59,25 +61,21 @@ export default function LanguageSelectScreen() {
   const router = useRouter();
   const [selected, setSelected] = useState(null);
 
-  const handleContinue = () => {
-    if (selected === "marathi") {
-      router.replace("/(tabs)");
-    }
-  };
-
   return (
-    <LinearGradient
-      colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-      style={styles.gradient}
-    >
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>What do you want{"\n"}to learn?</Text>
-          <Text style={styles.subtitle}>
-            Choose a language to start your journey
-          </Text>
-        </View>
+    <View style={styles.screen}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.primary} />
+      <LinearGradient colors={theme.primaryGradient} style={styles.topBanner}>
+        <Text style={styles.bannerTitle}>What do you want{"\n"}to learn?</Text>
+        <Text style={styles.bannerSubtitle}>
+          Choose a language to start your journey
+        </Text>
+      </LinearGradient>
 
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         {LANGUAGES.map((lang) => (
           <TouchableOpacity
             key={lang.id}
@@ -88,6 +86,7 @@ export default function LanguageSelectScreen() {
             ]}
             onPress={() => lang.available && setSelected(lang.id)}
             disabled={!lang.available}
+            activeOpacity={0.7}
           >
             <View style={styles.langInfo}>
               <Text style={styles.nativeName}>{lang.nativeName}</Text>
@@ -95,16 +94,22 @@ export default function LanguageSelectScreen() {
               <Text style={styles.langRegion}>{lang.region}</Text>
             </View>
             <View style={styles.langRight}>
-              {!lang.available && (
+              {!lang.available ? (
                 <View style={styles.comingSoonBadge}>
                   <Text style={styles.comingSoonText}>Coming Soon</Text>
                 </View>
-              )}
-              {lang.available && selected === lang.id && (
-                <Ionicons name="checkmark-circle" size={28} color="#9D4EDD" />
-              )}
-              {lang.available && selected !== lang.id && (
-                <Ionicons name="ellipse-outline" size={28} color="#444" />
+              ) : selected === lang.id ? (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={28}
+                  color={theme.primary}
+                />
+              ) : (
+                <Ionicons
+                  name="ellipse-outline"
+                  size={28}
+                  color={theme.textLight}
+                />
               )}
             </View>
           </TouchableOpacity>
@@ -112,101 +117,82 @@ export default function LanguageSelectScreen() {
 
         <TouchableOpacity
           style={[styles.continueButton, !selected && styles.continueDisabled]}
-          onPress={handleContinue}
+          onPress={() => selected === "marathi" && router.replace("/(tabs)")}
           disabled={!selected}
+          activeOpacity={0.8}
         >
           <LinearGradient
-            colors={selected ? ["#7B2FBE", "#9D4EDD"] : ["#333", "#444"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            colors={selected ? theme.primaryGradient : ["#CCCCCC", "#BBBBBB"]}
             style={styles.continueGradient}
           >
-            <Text style={styles.continueText}>Continue →</Text>
+            <Text style={styles.continueText}>Continue</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: { flex: 1 },
-  container: { flex: 1, padding: 24 },
-  header: {
-    marginTop: 60,
-    marginBottom: 32,
+  screen: { flex: 1, backgroundColor: theme.background },
+  topBanner: {
+    paddingTop: 70,
+    paddingBottom: 32,
+    paddingHorizontal: 24,
   },
-  title: {
-    fontSize: 32,
+  bannerTitle: {
+    fontSize: 28,
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 8,
-    lineHeight: 42,
+    lineHeight: 36,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#888",
-  },
+  bannerSubtitle: { fontSize: 15, color: "rgba(255,255,255,0.85)" },
+  scrollView: { flex: 1 },
+  container: { padding: 20, paddingBottom: 40 },
   langCard: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    ...theme.shadow,
   },
   selectedCard: {
-    borderColor: "#9D4EDD",
-    backgroundColor: "#2D1B69",
+    borderColor: theme.primary,
+    borderWidth: 2,
+    backgroundColor: theme.primaryLight,
   },
-  disabledCard: {
-    opacity: 0.5,
-  },
+  disabledCard: { opacity: 0.5 },
   langInfo: { flex: 1 },
   nativeName: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: theme.textPrimary,
     marginBottom: 4,
   },
-  langName: {
-    fontSize: 16,
-    color: "#CCC",
-    marginBottom: 2,
-  },
-  langRegion: {
-    fontSize: 13,
-    color: "#888",
-  },
+  langName: { fontSize: 15, color: theme.textPrimary, marginBottom: 2 },
+  langRegion: { fontSize: 13, color: theme.textSecondary },
   langRight: { alignItems: "center" },
   comingSoonBadge: {
-    backgroundColor: "#2D1B69",
+    backgroundColor: theme.primaryLight,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  comingSoonText: {
-    color: "#9D4EDD",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  continueButton: {
-    borderRadius: 16,
-    overflow: "hidden",
-    marginTop: 8,
-    marginBottom: 40,
-  },
-  continueDisabled: { opacity: 0.5 },
+  comingSoonText: { color: theme.primary, fontSize: 11, fontWeight: "600" },
+  continueButton: { borderRadius: 16, overflow: "hidden", marginTop: 8 },
+  continueDisabled: { opacity: 0.6 },
   continueGradient: {
     padding: 18,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
   },
-  continueText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+  continueText: { color: "#fff", fontSize: 17, fontWeight: "bold" },
 });

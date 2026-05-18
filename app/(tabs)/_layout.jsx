@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { Platform } from "react-native";
+import { theme } from "../utils/theme";
 
 export default function TabsLayout() {
   return (
@@ -7,11 +9,19 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#1A1A2E",
-          borderTopColor: "#2D1B69",
+          backgroundColor: theme.tabBar,
+          borderTopColor: theme.tabBarBorder,
+          borderTopWidth: 1,
+          height: Platform.OS === "android" ? 70 : 60,
+          paddingBottom: Platform.OS === "android" ? 12 : 8,
+          paddingTop: 4,
         },
-        tabBarActiveTintColor: "#9D4EDD",
-        tabBarInactiveTintColor: "#666",
+        tabBarActiveTintColor: theme.tabActive,
+        tabBarInactiveTintColor: theme.tabInactive,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+        },
       }}
     >
       <Tabs.Screen
@@ -54,12 +64,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="speaking"
-        options={{
-          href: null,
-        }}
-      />
+      <Tabs.Screen name="speaking" options={{ href: null }} />
     </Tabs>
   );
 }

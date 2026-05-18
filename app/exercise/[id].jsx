@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,6 +13,7 @@ import {
 } from "react-native";
 import API from "../utils/api";
 import { getUser } from "../utils/storage";
+import { theme } from "../utils/theme";
 
 export default function ExerciseScreen() {
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function ExerciseScreen() {
   const [user, setUser] = useState(null);
   const [xpEarned, setXpEarned] = useState(0);
   const [hints, setHints] = useState([]);
+  const [difficulty, setDifficulty] = useState("beginner");
 
   useEffect(() => {
     fetchExercises();
@@ -34,18 +37,46 @@ export default function ExerciseScreen() {
 
   const fetchExercises = async () => {
     try {
-      const response = await API.get(`/lessons/${id}/exercises`);
-      setExercises(response.data);
+      // Get previous score for adaptive difficulty
       const savedUser = await getUser();
       setUser(savedUser);
+
+      // Get previous score from progress
+      let previousScore = 0;
+      try {
+        const progressRes = await API.get(
+          `/gamification/stats/${savedUser?.id}`,
+        );
+        previousScore =
+          progressRes.data.xp_points > 200
+            ? 80
+            : progressRes.data.xp_points > 100
+              ? 50
+              : 0;
+      } catch (e) {
+        console.log("No previous score");
+      }
+
+      // Generate AI exercises
+      const response = await API.get(
+        `/exercises/generate/${id}?score=${previousScore}`,
+      );
+      setExercises(response.data.exercises);
+      setDifficulty(response.data.difficulty);
     } catch (err) {
-      console.error(err);
+      console.error("Exercise fetch error:", err);
+      // Fallback to static exercises if AI fails
+      try {
+        const fallback = await API.get(`/lessons/${id}/exercises`);
+        setExercises(fallback.data);
+      } catch (e) {
+        console.error("Fallback also failed:", e);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Generate hints dynamically whenever current exercise changes
   useEffect(() => {
     if (exercises.length > 0 && exercises[currentIndex]?.type === "FILL") {
       setHints(
@@ -55,15 +86,11 @@ export default function ExerciseScreen() {
   }, [currentIndex, exercises]);
 
   const generateHints = (correctAnswer, allExercises) => {
-    // Get wrong options from other exercises
     const otherAnswers = allExercises
       .filter((ex) => ex.correct_answer !== correctAnswer)
       .map((ex) => ex.correct_answer)
       .slice(0, 3);
-
-    // Combine correct answer with wrong ones and shuffle
-    const hints = [correctAnswer, ...otherAnswers];
-    return hints.sort(() => Math.random() - 0.5);
+    return [correctAnswer, ...otherAnswers].sort(() => Math.random() - 0.5);
   };
 
   const currentExercise = exercises[currentIndex];
@@ -74,9 +101,7 @@ export default function ExerciseScreen() {
     if (answered) return;
     setSelectedAnswer(option);
     setAnswered(true);
-    if (option === currentExercise.correct_answer) {
-      setScore(score + 1);
-    }
+    if (option === currentExercise.correct_answer) setScore(score + 1);
   };
 
   const handleNext = async () => {
@@ -113,68 +138,60 @@ export default function ExerciseScreen() {
   const getOptionTextStyle = (option) => {
     if (!answered) return styles.optionText;
     if (option === currentExercise.correct_answer)
-      return [styles.optionText, styles.correctText];
-    if (option === selectedAnswer) return [styles.optionText, styles.wrongText];
-    return [styles.optionText, styles.disabledText];
+      return [styles.optionText, { color: theme.success }];
+    if (option === selectedAnswer)
+      return [styles.optionText, { color: theme.error }];
+    return [styles.optionText, { color: theme.textLight }];
   };
 
   if (loading) {
     return (
-      <LinearGradient
-        colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-        style={styles.gradient}
+      <View
+        style={[
+          styles.screen,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
       >
-        <ActivityIndicator
-          color="#9D4EDD"
-          size="large"
-          style={{ marginTop: 100 }}
-        />
-      </LinearGradient>
+        <ActivityIndicator color={theme.primary} size="large" />
+      </View>
     );
   }
 
   // Results Screen
   if (finished) {
     const percentage = Math.round((score / exercises.length) * 100);
+    const isGood = percentage >= 80;
+    const isOk = percentage >= 50;
+
     return (
-      <LinearGradient
-        colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-        style={styles.gradient}
-      >
-        <View style={styles.resultContainer}>
+      <View style={styles.screen}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.primary} />
+        <LinearGradient
+          colors={theme.primaryGradient}
+          style={styles.resultBanner}
+        >
           <Ionicons
-            name={
-              percentage >= 80
-                ? "trophy"
-                : percentage >= 50
-                  ? "thumbs-up"
-                  : "barbell-outline"
-            }
-            size={80}
-            color={
-              percentage >= 80
-                ? "#FFD700"
-                : percentage >= 50
-                  ? "#4CAF50"
-                  : "#9D4EDD"
-            }
-            style={{ marginBottom: 16 }}
+            name={isGood ? "trophy" : isOk ? "thumbs-up" : "barbell-outline"}
+            size={64}
+            color="#FFFFFF"
           />
           <Text style={styles.resultTitle}>
-            {percentage >= 80
-              ? "Excellent!"
-              : percentage >= 50
-                ? "Good Job!"
-                : "Keep Practicing!"}
+            {isGood ? "Excellent!" : isOk ? "Good Job!" : "Keep Practicing!"}
           </Text>
-          <Text style={styles.resultScore}>
-            {score}/{exercises.length}
-          </Text>
-          <Text style={styles.resultPercent}>{percentage}% correct</Text>
+        </LinearGradient>
+
+        <ScrollView contentContainerStyle={styles.resultContent}>
+          <View style={styles.scoreCard}>
+            <Text style={styles.scoreNumber}>
+              {score}/{exercises.length}
+            </Text>
+            <Text style={styles.scorePercent}>{percentage}% correct</Text>
+          </View>
 
           {xpEarned > 0 && (
             <View style={styles.xpBanner}>
-              <Text style={styles.xpText}>+{xpEarned} XP earned! ⭐</Text>
+              <Ionicons name="star" size={20} color={theme.primary} />
+              <Text style={styles.xpText}>+{xpEarned} XP earned!</Text>
             </View>
           )}
 
@@ -190,55 +207,64 @@ export default function ExerciseScreen() {
                 setXpEarned(0);
               }}
             >
+              <Ionicons name="refresh" size={18} color={theme.primary} />
               <Text style={styles.retryText}>Try Again</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.backButton}
+              style={styles.doneButton}
               onPress={() => router.back()}
+              activeOpacity={0.8}
             >
               <LinearGradient
-                colors={["#7B2FBE", "#9D4EDD"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.backGradient}
+                colors={theme.primaryGradient}
+                style={styles.doneGradient}
               >
-                <Text style={styles.backButtonText}>Back to Lesson</Text>
+                <Text style={styles.doneText}>Back to Lesson</Text>
+                <Ionicons name="arrow-forward" size={18} color="#fff" />
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        </View>
-      </LinearGradient>
+        </ScrollView>
+      </View>
     );
   }
 
   return (
-    <LinearGradient
-      colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-      style={styles.gradient}
-    >
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.closeText}>✕</Text>
+    <View style={styles.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="close" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
-
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
-          </View>
-          <Text style={styles.progressText}>
-            {currentIndex + 1}/{exercises.length}
-          </Text>
+        <View style={styles.progressBarContainer}>
+          <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
+        <Text style={styles.progressText}>
+          {currentIndex + 1}/{exercises.length}
+        </Text>
+      </View>
 
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Score */}
         <View style={styles.scoreRow}>
-          <Text style={styles.scoreText}>⭐ {score} points</Text>
+          <View style={styles.difficultyBadge}>
+            <Text style={styles.difficultyText}>
+              {difficulty === "beginner"
+                ? "🌱 Beginner"
+                : difficulty === "intermediate"
+                  ? "📚 Intermediate"
+                  : "🏆 Advanced"}
+            </Text>
+          </View>
+          <Ionicons name="star" size={16} color={theme.primary} />
+          <Text style={styles.scoreText}>{score} points</Text>
         </View>
 
         {/* Question */}
@@ -259,11 +285,30 @@ export default function ExerciseScreen() {
                 key={index}
                 style={getOptionStyle(option)}
                 onPress={() => handleMCQAnswer(option)}
+                activeOpacity={0.7}
               >
-                <Text style={styles.optionLetter}>
-                  {["A", "B", "C", "D"][index]}
-                </Text>
+                <View style={styles.optionLetterBox}>
+                  <Text style={styles.optionLetter}>
+                    {["A", "B", "C", "D"][index]}
+                  </Text>
+                </View>
                 <Text style={getOptionTextStyle(option)}>{option}</Text>
+                {answered && option === currentExercise.correct_answer && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={theme.success}
+                  />
+                )}
+                {answered &&
+                  option === selectedAnswer &&
+                  option !== currentExercise.correct_answer && (
+                    <Ionicons
+                      name="close-circle"
+                      size={20}
+                      color={theme.error}
+                    />
+                  )}
               </TouchableOpacity>
             ))}
           </View>
@@ -284,7 +329,14 @@ export default function ExerciseScreen() {
                       ]}
                       onPress={() => setFillAnswer(hint)}
                     >
-                      <Text style={styles.hintText}>{hint}</Text>
+                      <Text
+                        style={[
+                          styles.hintText,
+                          fillAnswer === hint && styles.selectedHintText,
+                        ]}
+                      >
+                        {hint}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -296,13 +348,20 @@ export default function ExerciseScreen() {
                   onPress={() => {
                     if (!fillAnswer) return;
                     setAnswered(true);
-                    if (fillAnswer === currentExercise.correct_answer) {
+                    if (fillAnswer === currentExercise.correct_answer)
                       setScore(score + 1);
-                    }
                   }}
                   disabled={!fillAnswer}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.checkButtonText}>Check Answer</Text>
+                  <LinearGradient
+                    colors={
+                      fillAnswer ? theme.primaryGradient : ["#CCC", "#BBB"]
+                    }
+                    style={styles.checkGradient}
+                  >
+                    <Text style={styles.checkButtonText}>Check Answer</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </>
             ) : (
@@ -314,10 +373,23 @@ export default function ExerciseScreen() {
                     : styles.wrongFill,
                 ]}
               >
+                <Ionicons
+                  name={
+                    fillAnswer === currentExercise.correct_answer
+                      ? "checkmark-circle"
+                      : "close-circle"
+                  }
+                  size={24}
+                  color={
+                    fillAnswer === currentExercise.correct_answer
+                      ? theme.success
+                      : theme.error
+                  }
+                />
                 <Text style={styles.fillResultText}>
                   {fillAnswer === currentExercise.correct_answer
-                    ? "✅ Correct!"
-                    : `❌ Wrong! Answer: ${currentExercise.correct_answer}`}
+                    ? "Correct!"
+                    : `Answer: ${currentExercise.correct_answer}`}
                 </Text>
               </View>
             )}
@@ -336,107 +408,148 @@ export default function ExerciseScreen() {
                   : styles.wrongFeedback,
               ]}
             >
+              <Ionicons
+                name={
+                  selectedAnswer === currentExercise?.correct_answer ||
+                  fillAnswer === currentExercise?.correct_answer
+                    ? "checkmark-circle"
+                    : "bulb-outline"
+                }
+                size={20}
+                color={
+                  selectedAnswer === currentExercise?.correct_answer ||
+                  fillAnswer === currentExercise?.correct_answer
+                    ? theme.success
+                    : theme.primary
+                }
+              />
               <Text style={styles.feedbackText}>
                 {selectedAnswer === currentExercise?.correct_answer ||
                 fillAnswer === currentExercise?.correct_answer
-                  ? "🎉 Correct! Great job!"
-                  : `💡 Correct answer: ${currentExercise?.correct_answer}`}
+                  ? "Great job! Keep it up!"
+                  : `Correct answer: ${currentExercise?.correct_answer}`}
               </Text>
             </View>
 
-            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+            <TouchableOpacity
+              style={styles.nextButton}
+              onPress={handleNext}
+              activeOpacity={0.8}
+            >
               <LinearGradient
-                colors={["#7B2FBE", "#9D4EDD"]}
+                colors={theme.primaryGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.nextGradient}
               >
                 <Text style={styles.nextText}>
-                  {currentIndex + 1 >= exercises.length
-                    ? "Finish 🏁"
-                    : "Next →"}
+                  {currentIndex + 1 >= exercises.length ? "Finish" : "Next"}
                 </Text>
+                <Ionicons name="arrow-forward" size={18} color="#fff" />
               </LinearGradient>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: { flex: 1 },
-  container: { flex: 1, padding: 24 },
-  closeButton: { marginTop: 60, marginBottom: 16, alignSelf: "flex-start" },
-  closeText: { color: "#888", fontSize: 20 },
-  progressContainer: {
+  screen: { flex: 1, backgroundColor: theme.background },
+  scrollView: { flex: 1 },
+  container: { padding: 20, paddingBottom: 40 },
+
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    paddingHorizontal: 20,
+    paddingTop: 56,
+    paddingBottom: 12,
     gap: 12,
+    backgroundColor: theme.background,
   },
-  progressBar: {
+  progressBarContainer: {
     flex: 1,
     height: 8,
-    backgroundColor: "#2D1B69",
+    backgroundColor: theme.cardBorder,
     borderRadius: 4,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#9D4EDD",
+    backgroundColor: theme.primary,
     borderRadius: 4,
   },
-  progressText: { color: "#888", fontSize: 13 },
-  scoreRow: { alignItems: "flex-end", marginBottom: 24 },
-  scoreText: { color: "#9D4EDD", fontSize: 16, fontWeight: "bold" },
+  progressText: { color: theme.textSecondary, fontSize: 13, fontWeight: "600" },
+
+  scoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 16,
+    alignSelf: "flex-end",
+  },
+  scoreText: { color: theme.primary, fontSize: 14, fontWeight: "bold" },
+
   questionCard: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 20,
     padding: 24,
-    marginBottom: 24,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
+    ...theme.shadow,
   },
-  questionType: { color: "#9D4EDD", fontSize: 13, marginBottom: 12 },
+  questionType: {
+    color: theme.textSecondary,
+    fontSize: 13,
+    marginBottom: 12,
+  },
   questionText: {
-    color: "#FFFFFF",
+    color: theme.textPrimary,
     fontSize: 20,
     fontWeight: "bold",
     lineHeight: 30,
   },
-  optionsContainer: { gap: 12, marginBottom: 24 },
+
+  optionsContainer: { gap: 10, marginBottom: 20 },
   optionButton: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 14,
     padding: 16,
-    borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderWidth: 1.5,
+    borderColor: theme.cardBorder,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    ...theme.shadow,
   },
   correctOption: {
-    backgroundColor: "#1A3A1A",
-    borderColor: "#4CAF50",
+    backgroundColor: theme.successLight,
+    borderColor: theme.success,
   },
   wrongOption: {
-    backgroundColor: "#3A1A1A",
-    borderColor: "#F44336",
+    backgroundColor: theme.errorLight,
+    borderColor: theme.error,
   },
   disabledOption: { opacity: 0.5 },
-  optionLetter: {
-    color: "#9D4EDD",
-    fontWeight: "bold",
-    fontSize: 16,
-    width: 24,
+  optionLetterBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: theme.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  optionText: { color: "#FFFFFF", fontSize: 16, flex: 1 },
-  correctText: { color: "#4CAF50" },
-  wrongText: { color: "#F44336" },
-  disabledText: { color: "#666" },
-  fillContainer: { marginBottom: 24 },
+  optionLetter: {
+    color: theme.primary,
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  optionText: { color: theme.textPrimary, fontSize: 16, flex: 1 },
+
+  fillContainer: { marginBottom: 20 },
   fillOptions: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -444,99 +557,150 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   hintButton: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#2D1B69",
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: theme.cardBorder,
+    ...theme.shadow,
   },
   selectedHint: {
-    borderColor: "#9D4EDD",
-    backgroundColor: "#2D1B69",
+    borderColor: theme.primary,
+    backgroundColor: theme.primaryLight,
   },
-  hintText: { color: "#FFFFFF", fontSize: 18 },
-  checkButton: {
-    backgroundColor: "#9D4EDD",
-    borderRadius: 14,
-    padding: 16,
-    alignItems: "center",
-  },
-  checkButtonDisabled: { opacity: 0.5 },
+  hintText: { color: theme.textPrimary, fontSize: 18 },
+  selectedHintText: { color: theme.primary, fontWeight: "600" },
+  checkButton: { borderRadius: 14, overflow: "hidden" },
+  checkButtonDisabled: { opacity: 0.6 },
+  checkGradient: { padding: 16, alignItems: "center" },
   checkButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
   fillResult: {
     borderRadius: 14,
     padding: 16,
+    flexDirection: "row",
     alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
   },
   correctFill: {
-    backgroundColor: "#1A3A1A",
-    borderWidth: 1,
-    borderColor: "#4CAF50",
+    backgroundColor: theme.successLight,
+    borderColor: theme.success,
   },
   wrongFill: {
-    backgroundColor: "#3A1A1A",
-    borderWidth: 1,
-    borderColor: "#F44336",
+    backgroundColor: theme.errorLight,
+    borderColor: theme.error,
   },
-  fillResultText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
-  feedbackContainer: { marginBottom: 40 },
+  fillResultText: {
+    color: theme.textPrimary,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  feedbackContainer: { gap: 12, marginBottom: 20 },
   feedbackBox: {
     borderRadius: 14,
     padding: 16,
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     borderWidth: 1,
   },
-  correctFeedback: { backgroundColor: "#1A3A1A", borderColor: "#4CAF50" },
-  wrongFeedback: { backgroundColor: "#3A1A1A", borderColor: "#F44336" },
-  feedbackText: { color: "#FFFFFF", fontSize: 15, textAlign: "center" },
-  nextButton: { borderRadius: 14, overflow: "hidden" },
-  nextGradient: { padding: 18, alignItems: "center" },
-  nextText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  resultContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
+  correctFeedback: {
+    backgroundColor: theme.successLight,
+    borderColor: theme.success,
   },
-  resultEmoji: { fontSize: 80, marginBottom: 16 },
+  wrongFeedback: {
+    backgroundColor: theme.primaryLight,
+    borderColor: theme.primary,
+  },
+  feedbackText: { color: theme.textPrimary, fontSize: 15, flex: 1 },
+  nextButton: { borderRadius: 14, overflow: "hidden" },
+  nextGradient: {
+    padding: 16,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+  nextText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+
+  // Results
+  resultBanner: {
+    paddingTop: 80,
+    paddingBottom: 40,
+    alignItems: "center",
+    gap: 16,
+  },
   resultTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
     color: "#FFFFFF",
+  },
+  resultContent: { padding: 20 },
+  scoreCard: {
+    backgroundColor: theme.card,
+    borderRadius: 20,
+    padding: 32,
+    alignItems: "center",
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: theme.cardBorder,
+    ...theme.shadow,
   },
-  resultScore: {
-    fontSize: 64,
+  scoreNumber: {
+    fontSize: 52,
     fontWeight: "bold",
-    color: "#9D4EDD",
-    marginBottom: 8,
+    color: theme.primary,
+    marginBottom: 4,
   },
-  resultPercent: { fontSize: 18, color: "#888", marginBottom: 16 },
+  scorePercent: { fontSize: 18, color: theme.textSecondary },
   xpBanner: {
-    backgroundColor: "#2D1B69",
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: theme.primaryLight,
+    borderRadius: 14,
+    padding: 16,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#9D4EDD",
+    borderColor: theme.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
-  xpText: {
-    color: "#9D4EDD",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  resultButtons: { width: "100%", gap: 12 },
+  xpText: { color: theme.primary, fontSize: 17, fontWeight: "bold" },
+  resultButtons: { flexDirection: "row", gap: 12 },
   retryButton: {
-    backgroundColor: "#1A1A2E",
+    flex: 1,
+    backgroundColor: theme.card,
     borderRadius: 14,
     padding: 16,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    ...theme.shadow,
   },
-  retryText: { color: "#9D4EDD", fontSize: 16, fontWeight: "bold" },
-  backButton: { borderRadius: 14, overflow: "hidden" },
-  backGradient: { padding: 16, alignItems: "center" },
-  backButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  retryText: { color: theme.primary, fontSize: 15, fontWeight: "600" },
+  doneButton: { flex: 2, borderRadius: 14, overflow: "hidden" },
+  doneGradient: {
+    padding: 16,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+  doneText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
+  difficultyBadge: {
+    backgroundColor: theme.primaryLight,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: 8,
+  },
+  difficultyText: {
+    color: theme.primary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
 });

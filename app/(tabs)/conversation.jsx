@@ -15,6 +15,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -22,6 +23,7 @@ import {
   View,
 } from "react-native";
 import API from "../utils/api";
+import { theme } from "../utils/theme";
 
 const PRACTICE_WORDS = [
   { marathi: "नमस्कार", romanized: "Namaskar", english: "Hello" },
@@ -45,40 +47,28 @@ const scenarioIconMap = {
   train: "train-outline",
 };
 
-// Parse AI response into 3 parts
-const parseAIResponse = (text) => {
-  if (!text) return { feedback: "", marathi: "", hint: "" };
-  const lines = text.split("\n").filter((line) => line.trim());
-  let feedback = "";
-  let marathi = "";
-  let hint = "";
-
-  lines.forEach((line) => {
-    const trimmed = line.trim();
-    if (
-      trimmed.startsWith("✅") ||
-      trimmed.startsWith("❌") ||
-      trimmed.startsWith("Good") ||
-      trimmed.startsWith("Small mistake")
-    ) {
-      feedback += trimmed + " ";
-    } else if (
-      trimmed.startsWith("💡") ||
-      trimmed.toLowerCase().startsWith("hint:")
-    ) {
-      hint += trimmed.replace("💡", "").replace(/hint:/i, "").trim();
-    } else if (trimmed.length > 0) {
-      marathi += trimmed + " ";
-    }
-  });
-
+const parseAIResponse = (reply) => {
+  // Backend now returns a JSON object directly
+  if (typeof reply === "object" && reply !== null) {
+    return {
+      feedback: reply.feedback || "",
+      marathi: reply.marathi || "",
+      hint: reply.hint || "",
+      translation: reply.translation || "",
+    };
+  }
+  // Fallback for plain string
   return {
-    feedback: feedback.trim(),
-    marathi: marathi.trim(),
-    hint: hint.trim(),
+    feedback: "",
+    marathi: typeof reply === "string" ? reply : "",
+    hint: "",
+    translation: "",
   };
 };
 
+// ─────────────────────────────────────────
+// MAIN SCREEN
+// ─────────────────────────────────────────
 export default function PracticeScreen() {
   const [mode, setMode] = useState(null);
 
@@ -93,13 +83,12 @@ export default function PracticeScreen() {
 // ─────────────────────────────────────────
 function PracticeHub({ setMode }) {
   return (
-    <LinearGradient
-      colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-      style={styles.gradient}
-    >
+    <View style={styles.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <Text style={styles.title}>Practice</Text>
@@ -109,9 +98,15 @@ function PracticeHub({ setMode }) {
         <TouchableOpacity
           style={styles.modeCard}
           onPress={() => setMode("word")}
+          activeOpacity={0.7}
         >
-          <View style={[styles.modeIconBox, { backgroundColor: "#1A3A2A" }]}>
-            <Ionicons name="volume-high" size={32} color="#4CAF50" />
+          <View
+            style={[
+              styles.modeIconBox,
+              { backgroundColor: theme.successLight },
+            ]}
+          >
+            <Ionicons name="volume-high" size={32} color={theme.success} />
           </View>
           <View style={styles.modeInfo}>
             <Text style={styles.modeName}>Word Practice</Text>
@@ -122,35 +117,47 @@ function PracticeHub({ setMode }) {
               <Text style={styles.modeBadgeText}>Beginner Friendly</Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#9D4EDD" />
+          <Ionicons name="chevron-forward" size={20} color={theme.primary} />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.modeCard}
           onPress={() => setMode("speak_chat")}
+          activeOpacity={0.7}
         >
-          <View style={[styles.modeIconBox, { backgroundColor: "#2D1B69" }]}>
-            <Ionicons name="mic" size={32} color="#9D4EDD" />
+          <View
+            style={[
+              styles.modeIconBox,
+              { backgroundColor: theme.primaryLight },
+            ]}
+          >
+            <Ionicons name="mic" size={32} color={theme.primary} />
           </View>
           <View style={styles.modeInfo}>
             <Text style={styles.modeName}>Speak & Chat</Text>
             <Text style={styles.modeDesc}>
               Have real voice conversations with AI in different scenarios
             </Text>
-            <View style={[styles.modeBadge, { backgroundColor: "#2D1B44" }]}>
-              <Text style={[styles.modeBadgeText, { color: "#9D4EDD" }]}>
+            <View
+              style={[
+                styles.modeBadge,
+                { backgroundColor: theme.primaryLight },
+              ]}
+            >
+              <Text style={[styles.modeBadgeText, { color: theme.primary }]}>
                 Recommended
               </Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#9D4EDD" />
+          <Ionicons name="chevron-forward" size={20} color={theme.primary} />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.modeCard}
           onPress={() => setMode("text_chat")}
+          activeOpacity={0.7}
         >
-          <View style={[styles.modeIconBox, { backgroundColor: "#1A2A3A" }]}>
+          <View style={[styles.modeIconBox, { backgroundColor: "#E3F2FD" }]}>
             <Ionicons name="chatbubbles" size={32} color="#2196F3" />
           </View>
           <View style={styles.modeInfo}>
@@ -158,16 +165,16 @@ function PracticeHub({ setMode }) {
             <Text style={styles.modeDesc}>
               Practice Marathi conversations by typing with AI scenarios
             </Text>
-            <View style={[styles.modeBadge, { backgroundColor: "#1A2A3A" }]}>
+            <View style={[styles.modeBadge, { backgroundColor: "#E3F2FD" }]}>
               <Text style={[styles.modeBadgeText, { color: "#2196F3" }]}>
                 Type to Practice
               </Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#9D4EDD" />
+          <Ionicons name="chevron-forward" size={20} color={theme.primary} />
         </TouchableOpacity>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -243,7 +250,7 @@ function WordPractice({ setMode }) {
   };
 
   const getScoreColor = (score) =>
-    score >= 80 ? "#4CAF50" : score >= 50 ? "#FF9800" : "#F44336";
+    score >= 80 ? theme.success : score >= 50 ? theme.warning : theme.error;
   const getScoreIcon = (score) =>
     score >= 80
       ? "checkmark-circle"
@@ -252,17 +259,16 @@ function WordPractice({ setMode }) {
         : "close-circle";
 
   return (
-    <LinearGradient
-      colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-      style={styles.gradient}
-    >
+    <View style={styles.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.topNav}>
           <TouchableOpacity onPress={() => setMode(null)}>
-            <Ionicons name="arrow-back" size={24} color="#9D4EDD" />
+            <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.topNavTitle}>Word Practice</Text>
           <Text style={styles.topNavCount}>
@@ -287,14 +293,15 @@ function WordPractice({ setMode }) {
           <Text style={styles.romanized}>{currentWord.romanized}</Text>
           <TouchableOpacity
             style={styles.listenButton}
-            onPress={() =>
+            onPress={() => {
+              Speech.stop();
               Speech.speak(currentWord.marathi, {
                 language: "mr-IN",
                 rate: 0.7,
-              })
-            }
+              });
+            }}
           >
-            <Ionicons name="volume-high" size={20} color="#9D4EDD" />
+            <Ionicons name="volume-high" size={20} color={theme.primary} />
             <Text style={styles.listenText}>Hear pronunciation</Text>
           </TouchableOpacity>
         </View>
@@ -304,7 +311,7 @@ function WordPractice({ setMode }) {
             <Ionicons
               name="information-circle-outline"
               size={20}
-              color="#9D4EDD"
+              color={theme.primary}
             />
             <Text style={styles.instructionText}>
               {isRecording
@@ -318,10 +325,11 @@ function WordPractice({ setMode }) {
           <TouchableOpacity
             style={styles.recordButton}
             onPress={isRecording ? stopRecording : startRecording}
+            activeOpacity={0.8}
           >
             <LinearGradient
               colors={
-                isRecording ? ["#F44336", "#FF6B6B"] : ["#7B2FBE", "#9D4EDD"]
+                isRecording ? [theme.error, "#FF6B6B"] : theme.primaryGradient
               }
               style={styles.recordGradient}
             >
@@ -339,7 +347,7 @@ function WordPractice({ setMode }) {
 
         {isProcessing && (
           <View style={styles.processingBox}>
-            <ActivityIndicator color="#9D4EDD" size="large" />
+            <ActivityIndicator color={theme.primary} size="large" />
             <Text style={styles.processingText}>
               Analyzing pronunciation...
             </Text>
@@ -392,14 +400,19 @@ function WordPractice({ setMode }) {
                 </View>
                 <TouchableOpacity
                   style={styles.speakIconButton}
-                  onPress={() =>
+                  onPress={() => {
+                    Speech.stop();
                     Speech.speak(currentWord.marathi, {
                       language: "mr-IN",
                       rate: 0.7,
-                    })
-                  }
+                    });
+                  }}
                 >
-                  <Ionicons name="volume-high" size={24} color="#9D4EDD" />
+                  <Ionicons
+                    name="volume-high"
+                    size={24}
+                    color={theme.primary}
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -411,7 +424,7 @@ function WordPractice({ setMode }) {
                 style={styles.tryAgainButton}
                 onPress={() => setResult(null)}
               >
-                <Ionicons name="refresh" size={18} color="#9D4EDD" />
+                <Ionicons name="refresh" size={18} color={theme.primary} />
                 <Text style={styles.tryAgainText}>Try Again</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -420,9 +433,10 @@ function WordPractice({ setMode }) {
                   setResult(null);
                   setCurrentIndex((currentIndex + 1) % PRACTICE_WORDS.length);
                 }}
+                activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={["#7B2FBE", "#9D4EDD"]}
+                  colors={theme.primaryGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.nextGradient}
@@ -435,7 +449,7 @@ function WordPractice({ setMode }) {
           </View>
         )}
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -450,6 +464,7 @@ function SpeakChat({ setMode }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -478,17 +493,19 @@ function SpeakChat({ setMode }) {
   const selectScenario = async (scenario) => {
     setSelectedScenario(scenario);
     setMessages([]);
+    setShowSummary(false);
     setIsProcessing(true);
     try {
       const res = await API.post("/ai/chat", {
         scenario: scenario.id,
         messages: [],
       });
-      const reply = res.data.reply;
-      const parsed = parseAIResponse(reply);
-      setMessages([{ role: "assistant", content: reply, parsed }]);
-      if (parsed.marathi)
-        Speech.speak(parsed.marathi, { language: "mr-IN", rate: 0.8 });
+      const parsed = parseAIResponse(res.data.reply);
+      setMessages([{ role: "assistant", content: res.data.reply, parsed }]);
+      if (parsed.marathi) {
+        Speech.stop();
+        Speech.speak(String(parsed.marathi), { language: "mr-IN", rate: 0.8 });
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -502,14 +519,16 @@ function SpeakChat({ setMode }) {
       return;
     }
     try {
+      Speech.stop();
       await setAudioModeAsync({
         playsInSilentMode: true,
         allowsRecording: true,
       });
-      await audioRecorder.prepareToRecordAsync();
+      await audioRecorder.prepareToRecordAsync(); // This resets it for new recording
       audioRecorder.record();
       setIsRecording(true);
     } catch (err) {
+      console.error("Recording error:", err);
       Alert.alert("Error", "Failed to start recording.");
     }
   };
@@ -520,7 +539,12 @@ function SpeakChat({ setMode }) {
     try {
       await audioRecorder.stop();
       const uri = audioRecorder.uri;
-      if (!uri) return;
+
+      if (!uri) {
+        setIsProcessing(false);
+        Alert.alert("Error", "No recording found.");
+        return;
+      }
 
       const base64Audio = await FileSystem.readAsStringAsync(uri, {
         encoding: "base64",
@@ -532,6 +556,7 @@ function SpeakChat({ setMode }) {
       const transcribedText = transcribeRes.data.text;
 
       if (!transcribedText?.trim()) {
+        setIsProcessing(false);
         Alert.alert("No speech detected", "Please try speaking again.");
         return;
       }
@@ -544,38 +569,166 @@ function SpeakChat({ setMode }) {
         scenario: selectedScenario.id,
         messages: updatedMessages.map((m) => ({
           role: m.role,
-          content: m.content,
+          content:
+            typeof m.content === "object"
+              ? m.content.marathi || JSON.stringify(m.content)
+              : m.content,
         })),
       });
 
-      const reply = chatRes.data.reply;
-      const parsed = parseAIResponse(reply);
+      const parsed = parseAIResponse(chatRes.data.reply);
       setMessages([
         ...updatedMessages,
-        { role: "assistant", content: reply, parsed },
+        { role: "assistant", content: chatRes.data.reply, parsed },
       ]);
-      if (parsed.marathi)
-        Speech.speak(parsed.marathi, { language: "mr-IN", rate: 0.8 });
+      if (parsed.marathi) {
+        Speech.stop();
+        Speech.speak(String(parsed.marathi), { language: "mr-IN", rate: 0.8 });
+      }
     } catch (err) {
-      Alert.alert("Error", "Could not process your speech.");
+      console.error("Full error:", err.message);
+      console.error("Response:", err.response?.data);
+      Alert.alert(
+        "Error",
+        err.response?.data?.error ||
+          err.message ||
+          "Could not process your speech.",
+      );
     } finally {
       setIsProcessing(false);
     }
   };
 
+  // Session Summary
+  if (showSummary) {
+    return (
+      <View style={styles.screen}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.primary} />
+        <LinearGradient
+          colors={theme.primaryGradient}
+          style={styles.summaryHeader}
+        >
+          <Text style={styles.summaryHeaderTitle}>Session Summary</Text>
+          <Text style={styles.summaryHeaderSubtitle}>
+            {selectedScenario?.name}
+          </Text>
+        </LinearGradient>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.summaryContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.summaryStats}>
+            <View style={styles.summaryStat}>
+              <Text style={styles.summaryStatNumber}>
+                {messages.filter((m) => m.role === "user").length}
+              </Text>
+              <Text style={styles.summaryStatLabel}>Responses</Text>
+            </View>
+            <View style={styles.summaryStat}>
+              <Text style={styles.summaryStatNumber}>
+                {
+                  messages.filter(
+                    (m) =>
+                      m.role === "assistant" &&
+                      m.parsed?.feedback?.includes("✅"),
+                  ).length
+                }
+              </Text>
+              <Text style={styles.summaryStatLabel}>Correct</Text>
+            </View>
+            <View style={styles.summaryStat}>
+              <Text style={styles.summaryStatNumber}>
+                {
+                  messages.filter(
+                    (m) =>
+                      m.role === "assistant" &&
+                      m.parsed?.feedback?.includes("❌"),
+                  ).length
+                }
+              </Text>
+              <Text style={styles.summaryStatLabel}>Corrections</Text>
+            </View>
+          </View>
+
+          <Text style={styles.summarySection}>Conversation Review</Text>
+
+          {messages.map((msg, index) => (
+            <View key={index} style={styles.summaryMessage}>
+              {msg.role === "user" ? (
+                <View style={styles.summaryUserMsg}>
+                  <Text style={styles.summaryMsgLabel}>You said:</Text>
+                  <Text style={styles.summaryMsgText}>{msg.content}</Text>
+                </View>
+              ) : (
+                <View style={styles.summaryAiMsg}>
+                  {msg.parsed?.feedback ? (
+                    <View
+                      style={[
+                        styles.summaryFeedback,
+                        msg.parsed.feedback.includes("✅")
+                          ? styles.feedbackGood
+                          : styles.feedbackCorrect,
+                      ]}
+                    >
+                      <Text style={styles.feedbackBubbleText}>
+                        {msg.parsed.feedback}
+                      </Text>
+                    </View>
+                  ) : null}
+                  <Text style={styles.summaryMarathi}>
+                    {msg.parsed?.marathi || msg.content}
+                  </Text>
+                  {msg.parsed?.hint ? (
+                    <View style={styles.summaryHint}>
+                      <Ionicons name="bulb-outline" size={14} color="#8B6914" />
+                      <Text style={styles.hintBubbleText}>
+                        {msg.parsed.hint}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+            </View>
+          ))}
+
+          <TouchableOpacity
+            style={styles.summaryDoneButton}
+            onPress={() => {
+              Speech.stop();
+              setShowSummary(false);
+              setSelectedScenario(null);
+              setMessages([]);
+            }}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={theme.primaryGradient}
+              style={styles.summaryDoneGradient}
+            >
+              <Text style={styles.summaryDoneText}>Back to Scenarios</Text>
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Scenario Selection
   if (!selectedScenario) {
     return (
-      <LinearGradient
-        colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-        style={styles.gradient}
-      >
+      <View style={styles.screen}>
+        <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
         >
           <View style={styles.topNav}>
             <TouchableOpacity onPress={() => setMode(null)}>
-              <Ionicons name="arrow-back" size={24} color="#9D4EDD" />
+              <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.topNavTitle}>Speak & Chat</Text>
             <View style={{ width: 24 }} />
@@ -588,35 +741,44 @@ function SpeakChat({ setMode }) {
               key={scenario.id}
               style={styles.scenarioCard}
               onPress={() => selectScenario(scenario)}
+              activeOpacity={0.7}
             >
               <View style={styles.scenarioIconBox}>
                 <Ionicons
                   name={scenarioIconMap[scenario.id] || "chatbubble-outline"}
                   size={28}
-                  color="#9D4EDD"
+                  color={theme.primary}
                 />
               </View>
               <View style={styles.scenarioInfo}>
                 <Text style={styles.scenarioName}>{scenario.name}</Text>
                 <Text style={styles.scenarioHint}>Speak in Marathi</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#9D4EDD" />
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={theme.primary}
+              />
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </LinearGradient>
+      </View>
     );
   }
 
+  // Voice Chat
   return (
-    <LinearGradient
-      colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-      style={styles.gradient}
-    >
+    <View style={styles.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.card} />
       <View style={styles.chatContainer}>
         <View style={styles.chatHeader}>
-          <TouchableOpacity onPress={() => setSelectedScenario(null)}>
-            <Ionicons name="arrow-back" size={24} color="#9D4EDD" />
+          <TouchableOpacity
+            onPress={() => {
+              Speech.stop();
+              setSelectedScenario(null);
+            }}
+          >
+            <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
           <View style={styles.chatIconBox}>
             <Ionicons
@@ -624,13 +786,22 @@ function SpeakChat({ setMode }) {
                 scenarioIconMap[selectedScenario.id] || "chatbubble-outline"
               }
               size={22}
-              color="#9D4EDD"
+              color={theme.primary}
             />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.chatTitle}>{selectedScenario.name}</Text>
             <Text style={styles.chatSubtitle}>Voice conversation</Text>
           </View>
+          <TouchableOpacity
+            style={styles.endButton}
+            onPress={() => {
+              Speech.stop();
+              setShowSummary(true);
+            }}
+          >
+            <Text style={styles.endButtonText}>End</Text>
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -647,7 +818,6 @@ function SpeakChat({ setMode }) {
                 </View>
               ) : (
                 <View style={styles.aiBubbleContainer}>
-                  {/* Feedback box */}
                   {msg.parsed?.feedback ? (
                     <View
                       style={[
@@ -663,7 +833,6 @@ function SpeakChat({ setMode }) {
                     </View>
                   ) : null}
 
-                  {/* Marathi response */}
                   <View style={styles.aiBubble}>
                     <View style={styles.aiMessageHeader}>
                       <Text style={styles.aiLabel}>
@@ -671,26 +840,36 @@ function SpeakChat({ setMode }) {
                       </Text>
                       <TouchableOpacity
                         onPress={() => {
-                          const text = msg.parsed?.marathi || msg.content;
-                          Speech.speak(text, { language: "mr-IN", rate: 0.8 });
+                          const text = msg.parsed?.marathi || "";
+                          if (text) {
+                            Speech.stop();
+                            Speech.speak(String(text), {
+                              language: "mr-IN",
+                              rate: 0.8,
+                            });
+                          }
                         }}
                       >
                         <Ionicons
                           name="volume-high-outline"
                           size={16}
-                          color="#9D4EDD"
+                          color={theme.primary}
                         />
                       </TouchableOpacity>
                     </View>
                     <Text style={styles.marathiResponseText}>
-                      {msg.parsed?.marathi || msg.content}
+                      {msg.parsed?.marathi || ""}
                     </Text>
+                    {msg.parsed?.translation ? (
+                      <Text style={styles.translationText}>
+                        {msg.parsed.translation}
+                      </Text>
+                    ) : null}
                   </View>
 
-                  {/* Hint box */}
                   {msg.parsed?.hint ? (
                     <View style={styles.hintBubble}>
-                      <Ionicons name="bulb-outline" size={14} color="#FFD700" />
+                      <Ionicons name="bulb-outline" size={14} color="#8B6914" />
                       <Text style={styles.hintBubbleText}>
                         {msg.parsed.hint}
                       </Text>
@@ -702,7 +881,7 @@ function SpeakChat({ setMode }) {
           ))}
           {isProcessing && (
             <View style={styles.aiBubble}>
-              <ActivityIndicator color="#9D4EDD" size="small" />
+              <ActivityIndicator color={theme.primary} size="small" />
             </View>
           )}
         </ScrollView>
@@ -720,10 +899,11 @@ function SpeakChat({ setMode }) {
             ]}
             onPress={isRecording ? stopAndSend : startRecording}
             disabled={isProcessing}
+            activeOpacity={0.8}
           >
             <LinearGradient
               colors={
-                isRecording ? ["#F44336", "#FF6B6B"] : ["#7B2FBE", "#9D4EDD"]
+                isRecording ? [theme.error, "#FF6B6B"] : theme.primaryGradient
               }
               style={styles.voiceButtonGradient}
             >
@@ -739,7 +919,7 @@ function SpeakChat({ setMode }) {
           )}
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -783,8 +963,8 @@ function TextChat({ setMode }) {
         messages: [],
       });
       const reply = res.data.reply;
-      const parsed = parseAIResponse(reply);
-      setMessages([{ role: "assistant", content: reply, parsed }]);
+      const parsed = parseAIResponse(res.data.reply);
+      setMessages([{ role: "assistant", content: res.data.reply, parsed }]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -804,14 +984,17 @@ function TextChat({ setMode }) {
         scenario: selectedScenario.id,
         messages: updatedMessages.map((m) => ({
           role: m.role,
-          content: m.content,
+          content:
+            typeof m.content === "object"
+              ? m.content.marathi || JSON.stringify(m.content)
+              : m.content,
         })),
       });
       const reply = res.data.reply;
-      const parsed = parseAIResponse(reply);
+      const parsed = parseAIResponse(res.data.reply);
       setMessages([
         ...updatedMessages,
-        { role: "assistant", content: reply, parsed },
+        { role: "assistant", content: res.data.reply, parsed },
       ]);
     } catch (err) {
       console.error(err);
@@ -822,17 +1005,16 @@ function TextChat({ setMode }) {
 
   if (!selectedScenario) {
     return (
-      <LinearGradient
-        colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-        style={styles.gradient}
-      >
+      <View style={styles.screen}>
+        <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
         >
           <View style={styles.topNav}>
             <TouchableOpacity onPress={() => setMode(null)}>
-              <Ionicons name="arrow-back" size={24} color="#9D4EDD" />
+              <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.topNavTitle}>Text Chat</Text>
             <View style={{ width: 24 }} />
@@ -841,19 +1023,20 @@ function TextChat({ setMode }) {
           <Text style={styles.sectionLabel}>Choose a scenario to practice</Text>
 
           {loadingScenarios ? (
-            <ActivityIndicator color="#9D4EDD" size="large" />
+            <ActivityIndicator color={theme.primary} size="large" />
           ) : (
             scenarios.map((scenario) => (
               <TouchableOpacity
                 key={scenario.id}
                 style={styles.scenarioCard}
                 onPress={() => selectScenario(scenario)}
+                activeOpacity={0.7}
               >
                 <View style={styles.scenarioIconBox}>
                   <Ionicons
                     name={scenarioIconMap[scenario.id] || "chatbubble-outline"}
                     size={28}
-                    color="#9D4EDD"
+                    color={theme.primary}
                   />
                 </View>
                 <View style={styles.scenarioInfo}>
@@ -862,27 +1045,29 @@ function TextChat({ setMode }) {
                     Type in English or Marathi
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#9D4EDD" />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.primary}
+                />
               </TouchableOpacity>
             ))
           )}
         </ScrollView>
-      </LinearGradient>
+      </View>
     );
   }
 
   return (
-    <LinearGradient
-      colors={["#0D0D0D", "#1A0533", "#2D1B69"]}
-      style={styles.gradient}
-    >
+    <View style={styles.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.card} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <View style={styles.chatHeader}>
           <TouchableOpacity onPress={() => setSelectedScenario(null)}>
-            <Ionicons name="arrow-back" size={24} color="#9D4EDD" />
+            <Ionicons name="arrow-back" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
           <View style={styles.chatIconBox}>
             <Ionicons
@@ -890,7 +1075,7 @@ function TextChat({ setMode }) {
                 scenarioIconMap[selectedScenario.id] || "chatbubble-outline"
               }
               size={22}
-              color="#9D4EDD"
+              color={theme.primary}
             />
           </View>
           <Text style={styles.chatTitle}>{selectedScenario.name}</Text>
@@ -906,11 +1091,14 @@ function TextChat({ setMode }) {
               {msg.role === "user" ? (
                 <View style={styles.userBubble}>
                   <Text style={styles.userLabel}>You said</Text>
-                  <Text style={styles.userText}>{msg.content}</Text>
+                  <Text style={styles.userText}>
+                    {typeof msg.content === "string"
+                      ? msg.content
+                      : msg.content?.marathi || ""}
+                  </Text>
                 </View>
               ) : (
                 <View style={styles.aiBubbleContainer}>
-                  {/* Feedback box */}
                   {msg.parsed?.feedback ? (
                     <View
                       style={[
@@ -926,18 +1114,21 @@ function TextChat({ setMode }) {
                     </View>
                   ) : null}
 
-                  {/* Marathi response */}
                   <View style={styles.aiBubble}>
                     <Text style={styles.aiLabel}>{selectedScenario.name}</Text>
                     <Text style={styles.marathiResponseText}>
-                      {msg.parsed?.marathi || msg.content}
+                      {msg.parsed?.marathi || ""}
                     </Text>
+                    {msg.parsed?.translation ? (
+                      <Text style={styles.translationText}>
+                        {msg.parsed.translation}
+                      </Text>
+                    ) : null}
                   </View>
 
-                  {/* Hint box */}
                   {msg.parsed?.hint ? (
                     <View style={styles.hintBubble}>
-                      <Ionicons name="bulb-outline" size={14} color="#FFD700" />
+                      <Ionicons name="bulb-outline" size={14} color="#8B6914" />
                       <Text style={styles.hintBubbleText}>
                         {msg.parsed.hint}
                       </Text>
@@ -949,7 +1140,7 @@ function TextChat({ setMode }) {
           ))}
           {loading && (
             <View style={styles.aiBubble}>
-              <ActivityIndicator color="#9D4EDD" size="small" />
+              <ActivityIndicator color={theme.primary} size="small" />
             </View>
           )}
         </ScrollView>
@@ -958,7 +1149,7 @@ function TextChat({ setMode }) {
           <TextInput
             style={styles.input}
             placeholder="Type in English or Marathi..."
-            placeholderTextColor="#666"
+            placeholderTextColor={theme.textLight}
             value={inputText}
             onChangeText={setInputText}
             multiline
@@ -970,9 +1161,10 @@ function TextChat({ setMode }) {
             ]}
             onPress={sendMessage}
             disabled={!inputText.trim() || loading}
+            activeOpacity={0.8}
           >
             <LinearGradient
-              colors={["#7B2FBE", "#9D4EDD"]}
+              colors={theme.primaryGradient}
               style={styles.sendGradient}
             >
               <Ionicons name="send" size={20} color="#fff" />
@@ -980,7 +1172,7 @@ function TextChat({ setMode }) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -988,23 +1180,25 @@ function TextChat({ setMode }) {
 // STYLES
 // ─────────────────────────────────────────
 const styles = StyleSheet.create({
-  gradient: { flex: 1 },
+  screen: { flex: 1, backgroundColor: theme.background },
   scrollView: { flex: 1 },
-  container: { padding: 24, paddingBottom: 100 },
+  container: { padding: 20, paddingBottom: 100 },
+
   header: { marginTop: 60, marginBottom: 32 },
-  title: { fontSize: 28, fontWeight: "bold", color: "#FFFFFF" },
-  subtitle: { fontSize: 14, color: "#888", marginTop: 4 },
+  title: { fontSize: 28, fontWeight: "bold", color: theme.textPrimary },
+  subtitle: { fontSize: 14, color: theme.textSecondary, marginTop: 4 },
 
   modeCard: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
+    ...theme.shadow,
   },
   modeIconBox: {
     width: 64,
@@ -1014,16 +1208,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modeInfo: { flex: 1, gap: 6 },
-  modeName: { fontSize: 18, fontWeight: "bold", color: "#FFFFFF" },
-  modeDesc: { fontSize: 13, color: "#888", lineHeight: 18 },
+  modeName: { fontSize: 17, fontWeight: "bold", color: theme.textPrimary },
+  modeDesc: { fontSize: 13, color: theme.textSecondary, lineHeight: 18 },
   modeBadge: {
-    backgroundColor: "#1A3A2A",
+    backgroundColor: theme.successLight,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: "flex-start",
   },
-  modeBadgeText: { fontSize: 11, color: "#4CAF50", fontWeight: "600" },
+  modeBadgeText: { fontSize: 11, color: theme.success, fontWeight: "600" },
 
   topNav: {
     flexDirection: "row",
@@ -1032,116 +1226,127 @@ const styles = StyleSheet.create({
     marginTop: 60,
     marginBottom: 24,
   },
-  topNavTitle: { fontSize: 18, fontWeight: "bold", color: "#FFFFFF" },
-  topNavCount: { fontSize: 14, color: "#9D4EDD" },
-  sectionLabel: { fontSize: 16, color: "#888", marginBottom: 16 },
+  topNavTitle: { fontSize: 18, fontWeight: "bold", color: theme.textPrimary },
+  topNavCount: { fontSize: 14, color: theme.primary },
+  sectionLabel: { fontSize: 15, color: theme.textSecondary, marginBottom: 16 },
 
   progressBar: {
     height: 6,
-    backgroundColor: "#2D1B69",
+    backgroundColor: theme.cardBorder,
     borderRadius: 3,
     marginBottom: 24,
     overflow: "hidden",
   },
-  progressFill: { height: "100%", backgroundColor: "#9D4EDD", borderRadius: 3 },
+  progressFill: {
+    height: "100%",
+    backgroundColor: theme.primary,
+    borderRadius: 3,
+  },
 
   wordCard: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 24,
     padding: 32,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
     marginBottom: 24,
     gap: 8,
+    ...theme.shadow,
   },
-  englishWord: { fontSize: 18, color: "#888" },
-  marathiWord: { fontSize: 52, fontWeight: "bold", color: "#FFFFFF" },
-  romanized: { fontSize: 20, color: "#9D4EDD", fontWeight: "500" },
+  englishWord: { fontSize: 16, color: theme.textSecondary },
+  marathiWord: { fontSize: 52, fontWeight: "bold", color: theme.textPrimary },
+  romanized: { fontSize: 20, color: theme.primary, fontWeight: "600" },
   listenButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     marginTop: 8,
-    backgroundColor: "#2D1B69",
+    backgroundColor: theme.primaryLight,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: theme.primary,
   },
-  listenText: { color: "#9D4EDD", fontSize: 14 },
+  listenText: { color: theme.primary, fontSize: 14, fontWeight: "600" },
 
   instructionBox: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 14,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
+    ...theme.shadow,
   },
-  instructionText: { color: "#CCC", fontSize: 14, flex: 1 },
+  instructionText: { color: theme.textSecondary, fontSize: 14, flex: 1 },
 
   recordButton: { borderRadius: 20, overflow: "hidden", marginBottom: 24 },
   recordGradient: { padding: 24, alignItems: "center", gap: 12 },
   recordText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
 
   processingBox: { alignItems: "center", padding: 32, gap: 16 },
-  processingText: { color: "#888", fontSize: 16 },
+  processingText: { color: theme.textSecondary, fontSize: 16 },
 
   resultContainer: { gap: 16 },
   scoreCard: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 20,
     padding: 24,
     alignItems: "center",
     borderWidth: 2,
     gap: 8,
+    ...theme.shadow,
   },
   scoreNumber: { fontSize: 48, fontWeight: "bold" },
-  scoreLabel: { color: "#888", fontSize: 14 },
+  scoreLabel: { color: theme.textSecondary, fontSize: 14 },
   infoBox: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
     gap: 6,
+    ...theme.shadow,
   },
-  infoLabel: { color: "#9D4EDD", fontSize: 12, fontWeight: "600" },
-  infoText: { color: "#FFFFFF", fontSize: 15, lineHeight: 22 },
+  infoLabel: { color: theme.primary, fontSize: 12, fontWeight: "600" },
+  infoText: { color: theme.textPrimary, fontSize: 15, lineHeight: 22 },
   pronunciationRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   speakIconButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#2D1B69",
+    backgroundColor: theme.primaryLight,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#9D4EDD",
+    borderColor: theme.primary,
   },
   encouragement: {
-    color: "#9D4EDD",
-    fontSize: 16,
+    color: theme.primary,
+    fontSize: 15,
     textAlign: "center",
     fontStyle: "italic",
   },
   resultButtons: { flexDirection: "row", gap: 12, marginTop: 8 },
   tryAgainButton: {
     flex: 1,
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 14,
     padding: 16,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,
+    ...theme.shadow,
   },
-  tryAgainText: { color: "#9D4EDD", fontSize: 15, fontWeight: "600" },
+  tryAgainText: { color: theme.primary, fontSize: 15, fontWeight: "600" },
   nextButton: { flex: 2, borderRadius: 14, overflow: "hidden" },
   nextGradient: {
     padding: 16,
@@ -1153,71 +1358,98 @@ const styles = StyleSheet.create({
   nextText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
 
   scenarioCard: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    ...theme.shadow,
   },
   scenarioIconBox: {
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: "#2D1B69",
+    backgroundColor: theme.primaryLight,
     justifyContent: "center",
     alignItems: "center",
   },
   scenarioInfo: { flex: 1 },
   scenarioName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: theme.textPrimary,
     marginBottom: 4,
   },
-  scenarioHint: { fontSize: 13, color: "#888" },
+  scenarioHint: { fontSize: 13, color: theme.textSecondary },
 
-  chatContainer: { flex: 1 },
+  chatContainer: { flex: 1, backgroundColor: theme.background },
   chatHeader: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    paddingTop: 60,
-    backgroundColor: "#1A1A2E",
+    paddingTop: 56,
+    backgroundColor: theme.card,
     borderBottomWidth: 1,
-    borderBottomColor: "#2D1B69",
+    borderBottomColor: theme.cardBorder,
     gap: 12,
   },
   chatIconBox: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#2D1B69",
+    backgroundColor: theme.primaryLight,
     justifyContent: "center",
     alignItems: "center",
   },
-  chatTitle: { fontSize: 18, fontWeight: "bold", color: "#FFFFFF", flex: 1 },
-  chatSubtitle: { fontSize: 12, color: "#888" },
-  messagesContainer: { flex: 1, padding: 16 },
+  chatTitle: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: theme.textPrimary,
+    flex: 1,
+  },
+  chatSubtitle: { fontSize: 12, color: theme.textSecondary },
+  endButton: {
+    backgroundColor: theme.errorLight,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: theme.error,
+  },
+  endButtonText: { color: theme.error, fontSize: 13, fontWeight: "600" },
+  messagesContainer: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: theme.background,
+  },
 
   messageWrapper: { marginBottom: 16 },
   aiBubbleContainer: { gap: 6, maxWidth: "90%" },
 
   feedbackBubble: { borderRadius: 12, padding: 10, borderWidth: 1 },
-  feedbackGood: { backgroundColor: "#1A3A1A", borderColor: "#4CAF50" },
-  feedbackCorrect: { backgroundColor: "#3A2A1A", borderColor: "#FF9800" },
-  feedbackBubbleText: { color: "#FFFFFF", fontSize: 13, lineHeight: 18 },
+  feedbackGood: {
+    backgroundColor: theme.successLight,
+    borderColor: theme.success,
+  },
+  feedbackCorrect: { backgroundColor: "#FFF3E0", borderColor: theme.warning },
+  feedbackBubbleText: {
+    color: theme.textPrimary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
 
   aiBubble: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
     borderBottomLeftRadius: 4,
+    ...theme.shadow,
   },
   aiMessageHeader: {
     flexDirection: "row",
@@ -1227,12 +1459,12 @@ const styles = StyleSheet.create({
   },
   aiLabel: {
     fontSize: 11,
-    color: "#9D4EDD",
-    fontWeight: "600",
+    color: theme.primary,
+    fontWeight: "700",
     marginBottom: 4,
   },
   marathiResponseText: {
-    color: "#FFFFFF",
+    color: theme.textPrimary,
     fontSize: 17,
     lineHeight: 26,
     fontWeight: "500",
@@ -1242,16 +1474,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 6,
-    backgroundColor: "#2A2A1A",
+    backgroundColor: theme.warningLight,
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: "#FFD700",
+    borderColor: theme.warning,
   },
-  hintBubbleText: { color: "#FFD700", fontSize: 13, flex: 1, lineHeight: 18 },
+  hintBubbleText: { color: "#8B6914", fontSize: 13, flex: 1, lineHeight: 18 },
 
   userBubble: {
-    backgroundColor: "#2D1B69",
+    backgroundColor: theme.primary,
     borderRadius: 16,
     padding: 14,
     alignSelf: "flex-end",
@@ -1260,7 +1492,7 @@ const styles = StyleSheet.create({
   },
   userLabel: {
     fontSize: 11,
-    color: "#9D4EDD",
+    color: "rgba(255,255,255,0.8)",
     marginBottom: 4,
     fontWeight: "600",
   },
@@ -1268,18 +1500,18 @@ const styles = StyleSheet.create({
 
   voiceInputContainer: {
     padding: 20,
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderTopWidth: 1,
-    borderTopColor: "#2D1B69",
+    borderTopColor: theme.cardBorder,
     alignItems: "center",
     gap: 12,
   },
-  voiceHint: { color: "#888", fontSize: 14 },
+  voiceHint: { color: theme.textSecondary, fontSize: 14 },
   voiceButton: { borderRadius: 40, overflow: "hidden" },
   voiceButtonActive: {
-    shadowColor: "#F44336",
+    shadowColor: theme.error,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
+    shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 10,
   },
@@ -1289,26 +1521,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  processingHint: { color: "#9D4EDD", fontSize: 13 },
+  processingHint: { color: theme.primary, fontSize: 13 },
 
   inputContainer: {
     flexDirection: "row",
     padding: 16,
-    backgroundColor: "#1A1A2E",
+    backgroundColor: theme.card,
     borderTopWidth: 1,
-    borderTopColor: "#2D1B69",
+    borderTopColor: theme.cardBorder,
     gap: 12,
     alignItems: "flex-end",
   },
   input: {
     flex: 1,
-    backgroundColor: "#0D0D1A",
+    backgroundColor: theme.inputBg,
     borderRadius: 12,
     padding: 14,
-    color: "#FFFFFF",
+    color: theme.textPrimary,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: "#2D1B69",
+    borderColor: theme.cardBorder,
     maxHeight: 100,
   },
   sendButton: { borderRadius: 12, overflow: "hidden" },
@@ -1327,5 +1559,97 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   messageText: { fontSize: 15, lineHeight: 22 },
-  aiText: { color: "#DDDDDD" },
+  aiText: { color: theme.textPrimary },
+
+  // Session Summary
+  summaryHeader: {
+    paddingTop: 70,
+    paddingBottom: 30,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    gap: 8,
+  },
+  summaryHeaderTitle: { fontSize: 24, fontWeight: "bold", color: "#FFFFFF" },
+  summaryHeaderSubtitle: { fontSize: 15, color: "rgba(255,255,255,0.85)" },
+  summaryContainer: { padding: 20, paddingBottom: 60 },
+  summaryStats: {
+    flexDirection: "row",
+    backgroundColor: theme.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    ...theme.shadow,
+  },
+  summaryStat: { flex: 1, alignItems: "center", gap: 4 },
+  summaryStatNumber: { fontSize: 28, fontWeight: "bold", color: theme.primary },
+  summaryStatLabel: { fontSize: 12, color: theme.textSecondary },
+  summarySection: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: theme.textPrimary,
+    marginBottom: 16,
+  },
+  summaryMessage: { marginBottom: 12 },
+  summaryUserMsg: {
+    backgroundColor: theme.primaryLight,
+    borderRadius: 12,
+    padding: 12,
+    alignSelf: "flex-end",
+    maxWidth: "85%",
+    borderWidth: 1,
+    borderColor: theme.primary,
+  },
+  summaryAiMsg: { gap: 6, maxWidth: "90%" },
+  summaryMsgLabel: {
+    fontSize: 11,
+    color: theme.primary,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  summaryMsgText: { color: theme.textPrimary, fontSize: 14 },
+  summaryFeedback: { borderRadius: 10, padding: 10, borderWidth: 1 },
+  summaryMarathi: {
+    color: theme.textPrimary,
+    fontSize: 16,
+    fontWeight: "500",
+    lineHeight: 24,
+    backgroundColor: theme.card,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: theme.cardBorder,
+  },
+  summaryHint: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    backgroundColor: theme.warningLight,
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: theme.warning,
+  },
+  summaryDoneButton: { borderRadius: 16, overflow: "hidden", marginTop: 24 },
+  summaryDoneGradient: {
+    padding: 18,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+  summaryDoneText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  translationText: {
+    color: theme.textSecondary,
+    fontSize: 13,
+    fontStyle: "italic",
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  translationText: {
+    color: theme.textSecondary,
+    fontSize: 13,
+    fontStyle: "italic",
+    marginTop: 6,
+    lineHeight: 18,
+  },
 });
