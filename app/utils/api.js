@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://100.64.5.64:5000/api",
+  baseURL: "https://languagelearningapp-production-1e5e.up.railway.app/api",
 });
 
 export default API;
