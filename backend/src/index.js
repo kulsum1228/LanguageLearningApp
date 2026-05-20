@@ -25,6 +25,20 @@ app.get("/", (req, res) => {
   res.json({ message: "Marathi Learning App API is running!" });
 });
 
+app.get("/transcribe-test", (req, res) => {
+  try {
+    const FormData = require("form-data");
+    const fetch = require("node-fetch");
+    res.json({
+      formDataAvailable: !!FormData,
+      fetchAvailable: !!fetch,
+      nodeVersion: process.version,
+    });
+  } catch (err) {
+    res.json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

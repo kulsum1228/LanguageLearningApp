@@ -302,8 +302,10 @@ const transcribeAudio = async (req, res) => {
     res.status(200).json({ text: result.text });
   } catch (err) {
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-    console.error("Transcription error:", err.message);
-    res.status(500).json({ error: err.message });
+    console.error("Transcription error full:", err);
+    console.error("Transcription error message:", err.message);
+    console.error("Transcription error stack:", err.stack);
+    res.status(500).json({ error: err.message, details: err.stack });
   }
 };
 
