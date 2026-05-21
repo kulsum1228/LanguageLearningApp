@@ -476,12 +476,23 @@ function SpeakChat({ setMode }) {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
+  // const fetchScenarios = async () => {
+  //   try {
+  //     const res = await API.get("/ai/scenarios");
+  //     setScenarios(res.data);
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  // };
   const fetchScenarios = async () => {
     try {
       const res = await API.get("/ai/scenarios");
       setScenarios(res.data);
     } catch (err) {
-      console.error(err);
+      Alert.alert(
+        "Debug",
+        err.message + "\n" + JSON.stringify(err.response?.data),
+      );
     }
   };
 
@@ -942,14 +953,25 @@ function TextChat({ setMode }) {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
+  // const fetchScenarios = async () => {
+  //   try {
+  //     const res = await API.get("/ai/scenarios");
+  //     setScenarios(res.data);
+  //   } catch (err) {
+  //     console.error(err);
+  //   } finally {
+  //     setLoadingScenarios(false);
+  //   }
+  // };
   const fetchScenarios = async () => {
     try {
       const res = await API.get("/ai/scenarios");
       setScenarios(res.data);
     } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingScenarios(false);
+      Alert.alert(
+        "Debug",
+        err.message + "\n" + JSON.stringify(err.response?.data),
+      );
     }
   };
 

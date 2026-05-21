@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -33,12 +34,23 @@ export default function LessonsScreen() {
     fetchLessons();
   }, []);
 
+  // const fetchLessons = async () => {
+  //   try {
+  //     const response = await API.get("/lessons");
+  //     setLessons(response.data);
+  //   } catch (err) {
+  //     console.error(err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchLessons = async () => {
     try {
       const response = await API.get("/lessons");
       setLessons(response.data);
     } catch (err) {
-      console.error(err);
+      Alert.alert("API Error", err.message + "\n\nURL: " + err.config?.url);
     } finally {
       setLoading(false);
     }

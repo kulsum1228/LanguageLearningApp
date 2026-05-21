@@ -1,3 +1,7 @@
+// Fix File global
+const { File } = require("node:buffer");
+if (!globalThis.File) globalThis.File = File;
+
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();

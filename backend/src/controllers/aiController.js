@@ -255,6 +255,60 @@ const evaluatePronunciation = async (req, res) => {
 // ─────────────────────────────────────────
 // TRANSCRIBE AUDIO
 // ─────────────────────────────────────────
+// const transcribeAudio = async (req, res) => {
+//   const { audio_base64 } = req.body;
+
+//   if (!audio_base64) {
+//     return res.status(400).json({ message: "No audio provided" });
+//   }
+
+//   const tempPath = path.join(__dirname, `../../temp_${Date.now()}.m4a`);
+
+//   try {
+//     const audioBuffer = Buffer.from(audio_base64, "base64");
+//     fs.writeFileSync(tempPath, audioBuffer);
+
+//     // Use fetch-based approach compatible with all Node versions
+//     const FormData = require("form-data");
+//     const formData = new FormData();
+//     formData.append("file", fs.createReadStream(tempPath), {
+//       filename: "recording.m4a",
+//       contentType: "audio/mp4",
+//     });
+//     formData.append("model", "whisper-large-v3");
+//     formData.append("language", "mr");
+
+//     const fetch = require("node-fetch");
+//     const response = await fetch(
+//       "https://api.groq.com/openai/v1/audio/transcriptions",
+//       {
+//         method: "POST",
+//         headers: {
+//           Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+//           ...formData.getHeaders(),
+//         },
+//         body: formData,
+//       },
+//     );
+
+//     const result = await response.json();
+
+//     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+
+//     if (!response.ok) {
+//       throw new Error(result.error?.message || "Transcription failed");
+//     }
+
+//     res.status(200).json({ text: result.text });
+//   } catch (err) {
+//     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+//     console.error("Transcription error full:", err);
+//     console.error("Transcription error message:", err.message);
+//     console.error("Transcription error stack:", err.stack);
+//     res.status(500).json({ error: err.message, details: err.stack });
+//   }
+// };
+
 const transcribeAudio = async (req, res) => {
   const { audio_base64 } = req.body;
 
@@ -268,8 +322,9 @@ const transcribeAudio = async (req, res) => {
     const audioBuffer = Buffer.from(audio_base64, "base64");
     fs.writeFileSync(tempPath, audioBuffer);
 
-    // Use fetch-based approach compatible with all Node versions
     const FormData = require("form-data");
+    const fetch = require("node-fetch");
+
     const formData = new FormData();
     formData.append("file", fs.createReadStream(tempPath), {
       filename: "recording.m4a",
@@ -277,8 +332,8 @@ const transcribeAudio = async (req, res) => {
     });
     formData.append("model", "whisper-large-v3");
     formData.append("language", "mr");
+    formData.append("response_format", "json");
 
-    const fetch = require("node-fetch");
     const response = await fetch(
       "https://api.groq.com/openai/v1/audio/transcriptions",
       {
@@ -293,19 +348,23 @@ const transcribeAudio = async (req, res) => {
 
     const result = await response.json();
 
+    // Always clean up temp file
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
 
     if (!response.ok) {
+      console.error("Groq API error:", result);
       throw new Error(result.error?.message || "Transcription failed");
+    }
+
+    if (!result.text) {
+      throw new Error("No transcription text returned");
     }
 
     res.status(200).json({ text: result.text });
   } catch (err) {
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-    console.error("Transcription error full:", err);
-    console.error("Transcription error message:", err.message);
-    console.error("Transcription error stack:", err.stack);
-    res.status(500).json({ error: err.message, details: err.stack });
+    console.error("Transcription error:", err.message);
+    res.status(500).json({ error: err.message });
   }
 };
 
